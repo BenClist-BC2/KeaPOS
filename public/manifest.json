@@ -1,0 +1,22 @@
+{
+  "name": "KeaPOS - Restaurant Point of Sale",
+  "short_name": "KeaPOS",
+  "description": "Cloud-based POS system for New Zealand restaurants and bars",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

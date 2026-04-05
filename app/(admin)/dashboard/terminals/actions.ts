@@ -121,6 +121,63 @@ export async function updateTerminal(id: string, formData: FormData) {
   return { error: null };
 }
 
+export async function deleteTerminal(terminalId: string) {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated' };
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_id, role')
+    .eq('id', user.id)
+    .single();
+  if (!profile) return { error: 'Profile not found' };
+  if (!['owner', 'manager'].includes(profile.role)) {
+    return { error: 'Only owners and managers can delete terminals' };
+  }
+
+  // Get terminal to verify ownership and get auth user
+  const { data: terminal } = await supabase
+    .from('terminals')
+    .select('id, company_id')
+    .eq('id', terminalId)
+    .single();
+
+  if (!terminal) {
+    return { error: 'Terminal not found' };
+  }
+
+  if (terminal.company_id !== profile.company_id) {
+    return { error: 'Unauthorized' };
+  }
+
+  // Delete terminal record (profile and auth user are handled by cascade/triggers)
+  const { error } = await supabase
+    .from('terminals')
+    .delete()
+    .eq('id', terminalId);
+
+  if (error) return { error: error.message };
+
+  // Delete the auth user and profile for the terminal
+  const terminalEmail = `terminal-${terminalId}@keapos.internal`;
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+
+  const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+  const terminalUser = users.find(u => u.email === terminalEmail);
+
+  if (terminalUser) {
+    await supabaseAdmin.auth.admin.deleteUser(terminalUser.id);
+  }
+
+  revalidatePath('/dashboard/terminals');
+  return { error: null };
+}
+
 /**
  * Reset terminal credentials and generate new pairing code.
  * This allows re-pairing a terminal if credentials are lost.

@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect } from 'react';
 import type { Location } from '@/lib/types';
-import { createTerminal, updateTerminal, resetTerminalCredentials, type CreateTerminalResult } from './actions';
+import { createTerminal, updateTerminal, deleteTerminal, resetTerminalCredentials, type CreateTerminalResult } from './actions';
 
 interface Terminal {
   id: string;
@@ -193,9 +193,11 @@ function CreateForm({ locations, onDone, onSuccess }: CreateFormProps) {
 interface EditFormProps {
   terminal: Terminal;
   onDone: () => void;
+  onResetCredentials: (terminalId: string) => void;
+  onDelete: (terminalId: string) => void;
 }
 
-function EditForm({ terminal, onDone }: EditFormProps) {
+function EditForm({ terminal, onDone, onResetCredentials, onDelete }: EditFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -210,6 +212,18 @@ function EditForm({ terminal, onDone }: EditFormProps) {
         onDone();
       }
     });
+  }
+
+  function handleResetCredentials() {
+    if (confirm('Reset pairing code? The terminal will need to be re-paired with the new code.')) {
+      onResetCredentials(terminal.id);
+    }
+  }
+
+  function handleDelete() {
+    if (confirm(`Delete terminal "${terminal.name}"? This cannot be undone.`)) {
+      onDelete(terminal.id);
+    }
   }
 
   return (
@@ -235,17 +249,35 @@ function EditForm({ terminal, onDone }: EditFormProps) {
         <input type="hidden" name="active" value="false" />
       </div>
       {error && <ErrorMsg message={error} />}
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-700 disabled:opacity-50"
-        >
-          {pending ? 'Saving...' : 'Save'}
-        </button>
-        <button type="button" onClick={onDone} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
-          Cancel
-        </button>
+      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={pending}
+            className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-700 disabled:opacity-50"
+          >
+            {pending ? 'Saving...' : 'Save'}
+          </button>
+          <button type="button" onClick={onDone} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
+            Cancel
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleResetCredentials}
+            className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800"
+          >
+            Reset Pairing Code
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="px-4 py-2 text-sm text-red-600 hover:text-red-800"
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </form>
   );
@@ -262,7 +294,6 @@ export function TerminalsClient({ terminals, locations }: TerminalsClientProps) 
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pairingResult, setPairingResult] = useState<CreateTerminalResult | null>(null);
-  const [resetting, setResetting] = useState<string | null>(null);
 
   function handleCreateSuccess(result: CreateTerminalResult) {
     setAdding(false);
@@ -270,13 +301,21 @@ export function TerminalsClient({ terminals, locations }: TerminalsClientProps) 
   }
 
   async function handleResetCredentials(terminalId: string) {
-    setResetting(terminalId);
     const result = await resetTerminalCredentials(terminalId);
-    setResetting(null);
     if (result.error) {
       alert(result.error);
     } else {
+      setEditingId(null);
       setPairingResult(result);
+    }
+  }
+
+  async function handleDelete(terminalId: string) {
+    const result = await deleteTerminal(terminalId);
+    if (result.error) {
+      alert(result.error);
+    } else {
+      setEditingId(null);
     }
   }
 
@@ -310,7 +349,12 @@ export function TerminalsClient({ terminals, locations }: TerminalsClientProps) 
             {editingId === term.id ? (
               <>
                 <h2 className="font-semibold text-gray-900 mb-4">Edit terminal</h2>
-                <EditForm terminal={term} onDone={() => setEditingId(null)} />
+                <EditForm
+                  terminal={term}
+                  onDone={() => setEditingId(null)}
+                  onResetCredentials={handleResetCredentials}
+                  onDelete={handleDelete}
+                />
               </>
             ) : (
               <div className="flex items-start justify-between">
@@ -332,21 +376,12 @@ export function TerminalsClient({ terminals, locations }: TerminalsClientProps) 
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleResetCredentials(term.id)}
-                    disabled={resetting === term.id}
-                    className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
-                  >
-                    {resetting === term.id ? 'Resetting...' : 'Reset Pairing Code'}
-                  </button>
-                  <button
-                    onClick={() => setEditingId(term.id)}
-                    className="text-sm text-gray-500 hover:text-gray-900"
-                  >
-                    Edit
-                  </button>
-                </div>
+                <button
+                  onClick={() => setEditingId(term.id)}
+                  className="text-sm text-gray-500 hover:text-gray-900"
+                >
+                  Edit
+                </button>
               </div>
             )}
           </div>

@@ -1,12 +1,8 @@
 # Supabase CLI project configuration
 # Docs: https://supabase.com/docs/guides/cli/config
 
-[project]
-# Your Supabase project reference ID.
-# Find it at: https://supabase.com/dashboard/project/_/settings/general
-# Set via environment variable to keep it out of source control:
-#   export SUPABASE_PROJECT_REF=your-project-ref
-project_id = "env(SUPABASE_PROJECT_REF)"
+# A string used to distinguish this project. Used for local dev only.
+project_id = "keapos"
 
 [db]
 # The port the local Supabase DB will run on (local dev only).

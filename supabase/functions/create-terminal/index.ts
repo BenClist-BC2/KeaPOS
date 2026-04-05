@@ -22,15 +22,67 @@ serve(async (req) => {
   }
 
   try {
-    // Get request body
-    const { name, location_id, company_id }: CreateTerminalRequest = await req.json();
-
-    if (!name || !location_id || !company_id) {
+    // Get authenticated user from request
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: name, location_id, company_id' }),
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create client with user's token to verify auth and get profile
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    );
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get user's profile to verify role and company
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('company_id, role')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return new Response(
+        JSON.stringify({ error: 'Profile not found' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!['owner', 'manager'].includes(profile.role)) {
+      return new Response(
+        JSON.stringify({ error: 'Only owners and managers can create terminals' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get request body
+    const { name, location_id } = await req.json();
+
+    if (!name || !location_id) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields: name, location_id' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Use company_id from authenticated user's profile (not from request)
+    const company_id = profile.company_id;
 
     // Create admin client (uses SUPABASE_SERVICE_ROLE_KEY from env)
     const supabaseAdmin = createClient(

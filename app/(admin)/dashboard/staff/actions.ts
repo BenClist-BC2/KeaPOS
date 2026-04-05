@@ -50,6 +50,7 @@ export async function inviteStaff(formData: FormData) {
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${session.access_token}`,
+      'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     },
     body: JSON.stringify({
       full_name,
@@ -57,7 +58,6 @@ export async function inviteStaff(formData: FormData) {
       email,
       role,
       location_id,
-      company_id: profile.company_id,
     }),
   });
 

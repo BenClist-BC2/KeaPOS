@@ -48,11 +48,11 @@ export async function createTerminal(formData: FormData): Promise<CreateTerminal
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${session.access_token}`,
+      'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     },
     body: JSON.stringify({
       name,
       location_id,
-      company_id: profile.company_id,
     }),
   });
 

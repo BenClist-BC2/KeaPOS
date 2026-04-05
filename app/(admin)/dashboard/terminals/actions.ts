@@ -36,30 +36,16 @@ export async function createTerminal(formData: FormData): Promise<CreateTerminal
   if (!location_id) return { terminal_id: null, pairing_code: null, error: 'Location is required' };
 
   // Call Supabase Edge Function to create terminal
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!supabaseUrl || !session) {
-    return { terminal_id: null, pairing_code: null, error: 'Configuration error' };
-  }
-
-  const response = await fetch(`${supabaseUrl}/functions/v1/create-terminal`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`,
-      'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    },
-    body: JSON.stringify({
-      name,
-      location_id,
-    }),
+  const { data: result, error } = await supabase.functions.invoke('create-terminal', {
+    body: { name, location_id },
   });
 
-  const result = await response.json();
+  if (error) {
+    return { terminal_id: null, pairing_code: null, error: error.message ?? 'Failed to create terminal' };
+  }
 
-  if (!response.ok || result.error) {
-    return { terminal_id: null, pairing_code: null, error: result.error ?? 'Failed to create terminal' };
+  if (result?.error) {
+    return { terminal_id: null, pairing_code: null, error: result.error };
   }
 
   revalidatePath('/dashboard/terminals');

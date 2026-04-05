@@ -38,33 +38,22 @@ export async function inviteStaff(formData: FormData) {
   }
 
   // Call Supabase Edge Function to create staff
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!supabaseUrl || !session) {
-    return { error: 'Configuration error' };
-  }
-
-  const response = await fetch(`${supabaseUrl}/functions/v1/create-staff`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`,
-      'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    },
-    body: JSON.stringify({
+  const { data: result, error } = await supabase.functions.invoke('create-staff', {
+    body: {
       full_name,
       pin,
       email,
       role,
       location_id,
-    }),
+    },
   });
 
-  const result = await response.json();
+  if (error) {
+    return { error: error.message ?? 'Failed to create staff member' };
+  }
 
-  if (!response.ok || result.error) {
-    return { error: result.error ?? 'Failed to create staff member' };
+  if (result?.error) {
+    return { error: result.error };
   }
 
   revalidatePath('/dashboard/staff');

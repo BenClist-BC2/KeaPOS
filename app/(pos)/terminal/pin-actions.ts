@@ -2,6 +2,7 @@
 
 import bcrypt from 'bcryptjs';
 import { createClient } from '@/lib/supabase/server';
+import { logAudit } from '@/lib/audit';
 
 export interface VerifyPINResult {
   staff_id: string | null;
@@ -46,10 +47,27 @@ export async function verifyPIN(pin: string): Promise<VerifyPINResult> {
     return { staff_id: null, full_name: null, role: null, error: 'No staff with PINs found' };
   }
 
+  // Get terminal ID from email for audit logging
+  const terminalIdMatch = user.email?.match(/^terminal-([a-f0-9-]+)@keapos\.internal$/);
+  const terminal_id = terminalIdMatch?.[1] || null;
+
   // Check PIN against each staff member's hash (constant-time comparison)
   for (const member of staff) {
     if (member.pin_hash && await bcrypt.compare(pin, member.pin_hash)) {
-      // Match found
+      // Match found - log successful PIN login
+      await logAudit({
+        company_id: terminalProfile.company_id,
+        user_id: member.id,
+        terminal_id: terminal_id,
+        action: 'auth.pin_login',
+        entity_type: 'auth',
+        metadata: {
+          staff_name: member.full_name,
+          staff_role: member.role,
+          success: true,
+        },
+      });
+
       return {
         staff_id: member.id,
         full_name: member.full_name,
@@ -58,6 +76,18 @@ export async function verifyPIN(pin: string): Promise<VerifyPINResult> {
       };
     }
   }
+
+  // Failed PIN attempt - log for security
+  await logAudit({
+    company_id: terminalProfile.company_id,
+    terminal_id: terminal_id,
+    action: 'auth.pin_failed',
+    entity_type: 'auth',
+    metadata: {
+      pin_prefix: pin.substring(0, 2) + '**',  // Partial PIN for debugging (not full PIN!)
+      attempts_against_staff_count: staff.length,
+    },
+  });
 
   return { staff_id: null, full_name: null, role: null, error: 'Invalid PIN' };
 }

@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { logAudit } from '@/lib/audit';
 import type { CartLine } from '@/lib/store/cart';
 import type { OrderType } from '@/lib/types';
 
@@ -128,6 +129,27 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     .from('orders')
     .update({ status: 'closed', payment_status: 'paid', closed_at: new Date().toISOString() })
     .eq('id', order.id);
+
+  // Audit log: Order completed
+  await logAudit({
+    company_id: terminalProfile.company_id,
+    user_id: input.staff_id,
+    terminal_id: terminal_id,
+    action: 'order.completed',
+    entity_type: 'order',
+    entity_id: order.id,
+    new_values: {
+      order_number: order.order_number,
+      total_cents: input.total_cents,
+      order_type: input.order_type,
+      payment_method: input.payment_method,
+    },
+    metadata: {
+      items_count: input.lines.length,
+      table_id: input.table_id,
+      customer_name: input.customer_name,
+    },
+  });
 
   const change_cents = input.payment_method === 'cash' && input.tendered_cents
     ? Math.max(0, input.tendered_cents - input.total_cents)

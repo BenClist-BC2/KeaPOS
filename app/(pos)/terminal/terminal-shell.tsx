@@ -21,37 +21,46 @@ export function TerminalShell() {
     const supabase = createClient();
 
     // Check if terminal is authenticated (must be role='terminal')
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) {
+    supabase.auth.getUser()
+      .then(async ({ data }) => {
+        if (!data.user) {
+          setTerminalAuthenticated(false);
+          return;
+        }
+
+        // Check if user has terminal role
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        setTerminalAuthenticated(profile?.role === 'terminal');
+      })
+      .catch(() => {
+        // On error, assume not authenticated
         setTerminalAuthenticated(false);
-        return;
-      }
-
-      // Check if user has terminal role
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
-
-      setTerminalAuthenticated(profile?.role === 'terminal');
-    });
+      });
 
     // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!session?.user) {
+      try {
+        if (!session?.user) {
+          setTerminalAuthenticated(false);
+          return;
+        }
+
+        // Check if user has terminal role
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        setTerminalAuthenticated(profile?.role === 'terminal');
+      } catch {
         setTerminalAuthenticated(false);
-        return;
       }
-
-      // Check if user has terminal role
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-
-      setTerminalAuthenticated(profile?.role === 'terminal');
     });
 
     return () => subscription.unsubscribe();

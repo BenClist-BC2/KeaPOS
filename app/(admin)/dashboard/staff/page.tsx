@@ -9,6 +9,7 @@ export default async function StaffPage() {
     supabase
       .from('profiles')
       .select('*')
+      .neq('role', 'terminal')
       .order('full_name'),
     supabase
       .from('locations')

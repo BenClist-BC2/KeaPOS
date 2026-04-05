@@ -22,7 +22,7 @@ serve(async (req) => {
   }
 
   try {
-    // Get authenticated user from request
+    // Get authenticated user from JWT
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
@@ -31,21 +31,19 @@ serve(async (req) => {
       );
     }
 
-    // Create client with user's token to verify auth and get profile
+    // Extract JWT from "Bearer <token>"
+    const jwt = authHeader.replace('Bearer ', '');
+
+    // Create client and verify the JWT
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(jwt);
     if (userError || !user) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: `Unauthorized: ${userError?.message || 'No user'}` }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

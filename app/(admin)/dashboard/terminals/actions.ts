@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { logAudit, createDiff } from '@/lib/audit';
 
 export interface CreateTerminalResult {
   terminal_id: string | null;
@@ -100,16 +101,47 @@ export async function createTerminal(formData: FormData): Promise<CreateTerminal
   };
   const pairingCode = btoa(JSON.stringify(pairingData));
 
+  // Audit log: Terminal created
+  await logAudit({
+    company_id: profile.company_id,
+    user_id: user.id,
+    action: 'terminal.created',
+    entity_type: 'terminal',
+    entity_id: terminal.id,
+    new_values: {
+      name,
+      location_id,
+      active: true,
+    },
+  });
+
   revalidatePath('/dashboard/terminals');
   return { terminal_id: terminal.id, pairing_code: pairingCode, error: null };
 }
 
 export async function updateTerminal(id: string, formData: FormData) {
   const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated' };
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_id')
+    .eq('id', user.id)
+    .single();
+  if (!profile) return { error: 'Profile not found' };
+
   const name = (formData.get('name') as string)?.trim();
   const active = formData.get('active') === 'true';
 
   if (!name) return { error: 'Terminal name is required' };
+
+  // Fetch old values for audit trail
+  const { data: oldTerminal } = await supabase
+    .from('terminals')
+    .select('name, active')
+    .eq('id', id)
+    .single();
 
   const { error } = await supabase
     .from('terminals')
@@ -117,6 +149,28 @@ export async function updateTerminal(id: string, formData: FormData) {
     .eq('id', id);
 
   if (error) return { error: error.message };
+
+  // Audit log: Terminal modified
+  if (oldTerminal) {
+    const { old_values, new_values } = createDiff(
+      { name: oldTerminal.name, active: oldTerminal.active },
+      { name, active }
+    );
+
+    // Only log if there were actual changes
+    if (Object.keys(new_values).length > 0) {
+      await logAudit({
+        company_id: profile.company_id,
+        user_id: user.id,
+        action: 'terminal.modified',
+        entity_type: 'terminal',
+        entity_id: id,
+        old_values,
+        new_values,
+      });
+    }
+  }
+
   revalidatePath('/dashboard/terminals');
   return { error: null };
 }
@@ -185,6 +239,19 @@ export async function deleteTerminal(terminalId: string) {
   if (terminalUser) {
     await supabaseAdmin.auth.admin.deleteUser(terminalUser.id);
   }
+
+  // Audit log: Terminal deleted
+  await logAudit({
+    company_id: profile.company_id,
+    user_id: user.id,
+    action: 'terminal.deleted',
+    entity_type: 'terminal',
+    entity_id: terminalId,
+    metadata: {
+      terminal_name: terminal.name,
+      had_transactions: false,
+    },
+  });
 
   revalidatePath('/dashboard/terminals');
   return { error: null };
@@ -266,6 +333,18 @@ export async function resetTerminalCredentials(terminalId: string): Promise<Crea
     password: newPassword,
   };
   const pairingCode = btoa(JSON.stringify(pairingData));
+
+  // Audit log: Terminal credentials reset (security-critical)
+  await logAudit({
+    company_id: profile.company_id,
+    user_id: user.id,
+    action: 'terminal.credentials_reset',
+    entity_type: 'terminal',
+    entity_id: terminalId,
+    metadata: {
+      reset_by: user.id,
+    },
+  });
 
   revalidatePath('/dashboard/terminals');
   return { terminal_id: terminalId, pairing_code: pairingCode, error: null };

@@ -61,7 +61,8 @@ export async function createTerminal(formData: FormData): Promise<CreateTerminal
     return {
       terminal_id: null,
       pairing_code: null,
-      error: 'Service role key not configured. Set SUPABASE_SERVICE_ROLE_KEY in your environment.',
+      error: 'Service role key not configured. Set SUPABASE_SERVICE_ROLE_KEY in your environment. ' +
+             'Find it in Supabase Dashboard → Settings → API → Project API keys → service_role (or use a Secret API key with admin privileges).',
     };
   }
 

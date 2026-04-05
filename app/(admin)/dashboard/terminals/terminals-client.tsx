@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef, useEffect } from 'react';
 import type { Location } from '@/lib/types';
 import { createTerminal, updateTerminal, type CreateTerminalResult } from './actions';
 
@@ -19,12 +19,26 @@ function ErrorMsg({ message }: { message: string }) {
   return <p className="text-sm text-red-600 mt-1">{message}</p>;
 }
 
-// ─── QR Code generation (simple data URL) ───────────────────
+// ─── QR Code generation ──────────────────────────────────────
 
 function QRCodeDisplay({ data }: { data: string }) {
-  // For production, use a QR library like 'qrcode' or 'react-qr-code'
-  // For now, show the pairing code as text with copy button
   const [copied, setCopied] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (canvasRef.current) {
+      import('qrcode').then(QRCode => {
+        QRCode.toCanvas(canvasRef.current, data, {
+          width: 256,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF',
+          },
+        });
+      });
+    }
+  }, [data]);
 
   function copyToClipboard() {
     navigator.clipboard.writeText(data);
@@ -35,14 +49,9 @@ function QRCodeDisplay({ data }: { data: string }) {
   return (
     <div className="space-y-3">
       <div className="bg-gray-100 rounded-lg p-6 text-center">
-        <p className="text-xs text-gray-500 mb-2">QR Code</p>
+        <p className="text-xs text-gray-500 mb-2">Scan to pair terminal</p>
         <div className="bg-white p-4 inline-block rounded border border-gray-300">
-          {/* TODO: Replace with actual QR code library */}
-          <div className="w-48 h-48 flex items-center justify-center text-gray-400 text-xs">
-            QR code will display here
-            <br />
-            (install qrcode library)
-          </div>
+          <canvas ref={canvasRef} />
         </div>
       </div>
       <div>

@@ -50,7 +50,8 @@ export async function inviteStaff(formData: FormData) {
     if (!serviceRoleKey || !supabaseUrl) {
       return {
         error:
-          'Service role key not configured. Set SUPABASE_SERVICE_ROLE_KEY in your environment.',
+          'Service role key not configured. Set SUPABASE_SERVICE_ROLE_KEY in your environment. ' +
+          'Find it in Supabase Dashboard → Settings → API → Project API keys → service_role (or use a Secret API key with admin privileges).',
       };
     }
 

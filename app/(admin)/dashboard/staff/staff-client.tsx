@@ -27,27 +27,25 @@ function RoleBadge({ role }: { role: UserRole }) {
   );
 }
 
-interface InviteFormProps {
+interface AddManagerFormProps {
   locations: Location[];
   onDone: () => void;
 }
 
-function InviteForm({ locations, onDone }: InviteFormProps) {
+function AddManagerForm({ locations, onDone }: AddManagerFormProps) {
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<{ hasEmail: boolean } | null>(null);
+  const [success, setSuccess] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const hasEmail = !!(fd.get('email') as string)?.trim();
-
     startTransition(async () => {
       const result = await inviteStaff(fd);
       if (result.error) {
         setError(result.error);
       } else {
-        setSuccess({ hasEmail });
+        setSuccess(true);
       }
     });
   }
@@ -55,18 +53,9 @@ function InviteForm({ locations, onDone }: InviteFormProps) {
   if (success) {
     return (
       <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-4">
-        <p className="font-medium">
-          {success.hasEmail ? 'Invitation sent!' : 'Staff member added!'}
-        </p>
-        <p className="mt-1 text-green-600">
-          {success.hasEmail
-            ? 'They will receive an email invitation to set their password and access the admin portal.'
-            : 'They can now log in to any terminal with their PIN.'}
-        </p>
-        <button
-          onClick={() => { setSuccess(null); onDone(); }}
-          className="mt-3 text-sm text-green-700 underline"
-        >
+        <p className="font-medium">Invitation sent!</p>
+        <p className="mt-1 text-green-600">They will receive an email to set their password and access the admin portal.</p>
+        <button onClick={() => { setSuccess(false); onDone(); }} className="mt-3 text-sm text-green-700 underline">
           Done
         </button>
       </div>
@@ -75,85 +64,106 @@ function InviteForm({ locations, onDone }: InviteFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
-        <p className="font-medium">Two types of team members:</p>
-        <ul className="mt-1 ml-4 list-disc space-y-1 text-blue-700">
-          <li><strong>With email:</strong> Can access admin portal + use terminal with PIN (Owner/Manager)</li>
-          <li><strong>Without email:</strong> Terminal access only with PIN (Staff)</li>
-        </ul>
-      </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Full name *</label>
-          <input
-            name="full_name"
-            required
-            placeholder="e.g. Jane Smith"
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
-          />
+          <input name="full_name" required placeholder="e.g. Jane Smith" className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">PIN * <span className="text-gray-400 font-normal">(for terminal login)</span></label>
-          <input
-            name="pin"
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]{4,6}"
-            required
-            placeholder="4-6 digits"
-            maxLength={6}
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
-          />
+          <label className="block text-sm font-medium text-gray-700">Email *</label>
+          <input name="email" type="email" required placeholder="jane@example.co.nz" className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Email <span className="text-gray-400 font-normal">(optional - for admin portal)</span>
-          </label>
-          <input
-            name="email"
-            type="email"
-            placeholder="jane@example.co.nz"
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
-          />
+          <label className="block text-sm font-medium text-gray-700">PIN * <span className="text-gray-400 font-normal">(for terminal access)</span></label>
+          <input name="pin" type="text" inputMode="numeric" pattern="[0-9]{4,6}" required placeholder="4-6 digits" maxLength={6} className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Role *</label>
-          <select
-            name="role"
-            defaultValue="staff"
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
-          >
-            {ROLES.map(r => (
-              <option key={r.value} value={r.value}>{r.label}</option>
-            ))}
+          <select name="role" defaultValue="manager" className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900">
+            <option value="owner">Owner</option>
+            <option value="manager">Manager</option>
           </select>
         </div>
         <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700">Default location</label>
-          <select
-            name="location_id"
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
-          >
+          <select name="location_id" className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900">
             <option value="">Any location</option>
-            {locations.map(loc => (
-              <option key={loc.id} value={loc.id}>{loc.name}</option>
-            ))}
+            {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
           </select>
         </div>
       </div>
       {error && <ErrorMsg message={error} />}
       <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-700 disabled:opacity-50"
-        >
-          {pending ? 'Adding…' : 'Add team member'}
+        <button type="submit" disabled={pending} className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-700 disabled:opacity-50">
+          {pending ? 'Sending invite…' : 'Send invite'}
         </button>
-        <button type="button" onClick={onDone} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
-          Cancel
+        <button type="button" onClick={onDone} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Cancel</button>
+      </div>
+    </form>
+  );
+}
+
+interface AddStaffFormProps {
+  locations: Location[];
+  onDone: () => void;
+}
+
+function AddStaffForm({ locations, onDone }: AddStaffFormProps) {
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    fd.set('role', 'staff'); // Force role to staff
+    startTransition(async () => {
+      const result = await inviteStaff(fd);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setSuccess(true);
+      }
+    });
+  }
+
+  if (success) {
+    return (
+      <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-4">
+        <p className="font-medium">Staff member added!</p>
+        <p className="mt-1 text-green-600">They can now log in to any terminal with their PIN.</p>
+        <button onClick={() => { setSuccess(false); onDone(); }} className="mt-3 text-sm text-green-700 underline">
+          Done
         </button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Full name *</label>
+          <input name="full_name" required placeholder="e.g. John Doe" className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">PIN *</label>
+          <input name="pin" type="text" inputMode="numeric" pattern="[0-9]{4,6}" required placeholder="4-6 digits" maxLength={6} className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900" />
+        </div>
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-gray-700">Default location</label>
+          <select name="location_id" className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900">
+            <option value="">Any location</option>
+            {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
+          </select>
+        </div>
+      </div>
+      {error && <ErrorMsg message={error} />}
+      <div className="flex gap-2">
+        <button type="submit" disabled={pending} className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-700 disabled:opacity-50">
+          {pending ? 'Adding…' : 'Add staff member'}
+        </button>
+        <button type="button" onClick={onDone} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Cancel</button>
       </div>
     </form>
   );
@@ -229,7 +239,7 @@ interface StaffClientProps {
 }
 
 export function StaffClient({ staff, locations }: StaffClientProps) {
-  const [inviting, setInviting] = useState(false);
+  const [addingType, setAddingType] = useState<'manager' | 'staff' | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const locationName = (id: string | null) =>
@@ -238,18 +248,33 @@ export function StaffClient({ staff, locations }: StaffClientProps) {
   return (
     <div className="space-y-4">
       {/* Add team member panel */}
-      {inviting ? (
+      {addingType === 'manager' ? (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">Add team member</h2>
-          <InviteForm locations={locations} onDone={() => setInviting(false)} />
+          <h2 className="font-semibold text-gray-900 mb-4">Add manager</h2>
+          <p className="text-sm text-gray-600 mb-4">Managers receive an email invitation and can access the admin portal + terminals.</p>
+          <AddManagerForm locations={locations} onDone={() => setAddingType(null)} />
+        </div>
+      ) : addingType === 'staff' ? (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">Add staff member</h2>
+          <p className="text-sm text-gray-600 mb-4">Staff members use PIN-only and can only access terminals (no admin portal).</p>
+          <AddStaffForm locations={locations} onDone={() => setAddingType(null)} />
         </div>
       ) : (
-        <button
-          onClick={() => setInviting(true)}
-          className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-700"
-        >
-          + Add team member
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setAddingType('manager')}
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+          >
+            + Add Manager
+          </button>
+          <button
+            onClick={() => setAddingType('staff')}
+            className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-700"
+          >
+            + Add Staff Member
+          </button>
+        </div>
       )}
 
       {/* Staff table */}

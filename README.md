@@ -50,12 +50,20 @@ keapos/
 │   ├── supabase/             # Supabase client configuration
 │   ├── db/                   # Dexie offline database schema and helpers
 │   └── providers/            # React providers (TanStack Query, etc.)
+├── supabase/
+│   ├── migrations/           # SQL migration files (source of truth for schema)
+│   ├── seed.sql              # Development seed data
+│   └── config.toml           # Supabase CLI configuration
+├── .github/workflows/
+│   ├── ci.yml                # Runs unit tests on every PR
+│   └── migrate.yml           # Applies migrations on merge to main/staging
 ├── tests/
 │   ├── setup.ts              # Vitest global setup (fake-indexeddb, jest-dom)
 │   ├── unit/                 # Unit and component tests
 │   └── e2e/                  # Playwright end-to-end tests
 ├── public/
 │   └── manifest.json         # PWA manifest
+├── proxy.ts                  # Next.js 16 request proxy (auth session refresh)
 ├── playwright.config.ts      # Playwright configuration
 ├── vitest.config.ts          # Vitest configuration
 └── typedoc.json              # API documentation configuration
@@ -101,45 +109,112 @@ Company (e.g., "Bob's Burgers Ltd")
 - ❌ Real-time inventory checks (uses cached data)
 - ❌ New staff login (must be logged in before outage)
 
+## Supabase Environments
+
+Schema changes are managed as migration files in `supabase/migrations/`. These files are the **single source of truth** — never change the schema directly in the Supabase dashboard.
+
+### Environment Strategy
+
+| Branch | Supabase environment | Purpose |
+|---|---|---|
+| `main` | Production project | Live customers |
+| `staging` | Staging project | QA / client sign-off |
+| Feature branches | Supabase Branch (auto) | Development |
+
+[Supabase Branching](https://supabase.com/docs/guides/platform/branching) (Pro plan) automatically creates an isolated database for each Git branch and runs your migrations against it. When a PR is merged, the branch database is deleted. Production only receives a migration when it lands on `main`.
+
+GitHub Actions (`.github/workflows/migrate.yml`) applies migrations automatically on merge to `main` or `staging`.
+
+### Creating a migration
+
+Always create migrations via the CLI so they get a proper timestamp:
+
+```bash
+npm run db:new -- add_staff_pin_column
+# creates supabase/migrations/20240101120000_add_staff_pin_column.sql
+# edit the file, then commit it
+```
+
+### Applying migrations manually
+
+```bash
+npm run db:migrate   # push pending migrations to the linked project
+npm run db:diff      # preview what would change
+npm run db:reset     # wipe and re-run all migrations + seed (dev only)
+```
+
+### Generating TypeScript types
+
+After any schema change, regenerate the type definitions:
+
+```bash
+npm run db:types
+# writes lib/supabase/database.types.ts
+```
+
+Commit the generated file so the whole team gets updated types immediately.
+
+### Required GitHub Secrets
+
+| Secret | Description |
+|---|---|
+| `SUPABASE_ACCESS_TOKEN` | Personal access token from [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens) |
+| `SUPABASE_PROJECT_REF_PROD` | Project ref for production (Settings → General) |
+| `SUPABASE_PROJECT_REF_STAGING` | Project ref for staging |
+| `SUPABASE_DB_PASSWORD_PROD` | Database password for production |
+| `SUPABASE_DB_PASSWORD_STAGING` | Database password for staging |
+
+---
+
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- npm or yarn
-- Supabase account
+- Node.js 20+
+- npm
+- [Supabase CLI](https://supabase.com/docs/guides/cli/getting-started)
+- A Supabase account with a project created for your dev branch
 
-### Environment Variables
-
-Copy `.env.local.example` to `.env.local` and fill in your values:
-
-```bash
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=your-project-url.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# App Configuration
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-# Payment Provider
-PAYMENT_PROVIDER_API_KEY=your-payment-api-key
-PAYMENT_PROVIDER_URL=https://api.payment-provider.com
-```
-
-### Installation
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-### Development
+### 2. Set up environment variables
+
+Copy `.env.local` (already in the repo with empty values) and fill in your dev Supabase project credentials — find them at **Supabase Dashboard → Settings → API**:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+### 3. Link and migrate your Supabase project
+
+```bash
+supabase login
+supabase link --project-ref your-project-ref
+npm run db:migrate
+```
+
+### 4. (Optional) Load seed data
+
+```bash
+supabase db reset   # runs all migrations + seed.sql
+```
+
+### 5. Start the dev server
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) for the admin portal (redirects to `/dashboard`).
-Open [http://localhost:3000/terminal](http://localhost:3000/terminal) for the POS terminal.
+- Admin portal: [http://localhost:3000](http://localhost:3000) → redirects to `/dashboard`
+- POS terminal: [http://localhost:3000/terminal](http://localhost:3000/terminal)
+
+> **Without Supabase configured**, the app still runs — auth is bypassed and the UI is fully browsable.
 
 ### Build
 
@@ -231,14 +306,10 @@ npm run docs             # Generate TypeDoc docs into docs/api/
 
 ## Next Steps
 
-Foundation and testing infrastructure are in place. Next phases include:
-
-1. **Database Schema** - Supabase SQL migrations for companies, locations, users, menu items, transactions
-2. **Authentication** - Supabase Auth login/logout with role management (owner, manager, staff)
-3. **Admin Portal** - Company setup, menu management, staff management
-4. **POS Terminal** - Order taking, payment processing, offline queue
-5. **Sync Logic** - Offline queue processing and conflict resolution
-6. **Hardware Integration** - Printer and payment terminal APIs (Windcave/Smartpay)
+1. **Admin Portal** - Company setup, menu management, staff management
+2. **POS Terminal** - Order taking, payment processing, offline queue
+3. **Sync Logic** - Offline queue processing and conflict resolution
+4. **Hardware Integration** - Printer and payment terminal APIs (Windcave/Smartpay)
 
 ## License
 

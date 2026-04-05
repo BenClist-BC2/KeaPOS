@@ -87,6 +87,7 @@ export interface Order {
   company_id: string;
   table_id: string | null;
   staff_id: string | null;
+  terminal_id: string | null;
   order_number: number;
   status: OrderStatus;
   order_type: OrderType;

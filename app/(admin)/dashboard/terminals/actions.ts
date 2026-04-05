@@ -35,8 +35,17 @@ export async function createTerminal(formData: FormData): Promise<CreateTerminal
   if (!name) return { terminal_id: null, pairing_code: null, error: 'Terminal name is required' };
   if (!location_id) return { terminal_id: null, pairing_code: null, error: 'Location is required' };
 
+  // Get session to pass auth to Edge Function
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    return { terminal_id: null, pairing_code: null, error: 'No active session' };
+  }
+
   // Call Supabase Edge Function to create terminal
   const { data: result, error } = await supabase.functions.invoke('create-terminal', {
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
     body: { name, location_id },
   });
 

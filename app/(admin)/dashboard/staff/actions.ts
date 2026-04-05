@@ -37,8 +37,17 @@ export async function inviteStaff(formData: FormData) {
     return { error: 'Invalid role' };
   }
 
+  // Get session to pass auth to Edge Function
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    return { error: 'No active session' };
+  }
+
   // Call Supabase Edge Function to create staff
   const { data: result, error } = await supabase.functions.invoke('create-staff', {
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
     body: {
       full_name,
       pin,

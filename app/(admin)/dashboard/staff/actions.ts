@@ -17,11 +17,16 @@ export async function inviteStaff(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Not authenticated' };
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('company_id, role')
     .eq('id', user.id)
     .single();
+
+  if (profileError) {
+    console.error('Profile lookup error:', profileError);
+    return { error: `Profile lookup failed: ${profileError.message}` };
+  }
   if (!profile) return { error: 'Profile not found' };
   if (!['owner', 'manager'].includes(profile.role)) {
     return { error: 'Only owners and managers can invite staff' };

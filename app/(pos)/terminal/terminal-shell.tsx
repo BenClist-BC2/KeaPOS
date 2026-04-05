@@ -20,14 +20,38 @@ export function TerminalShell() {
   useEffect(() => {
     const supabase = createClient();
 
-    // Check if terminal is authenticated
-    supabase.auth.getUser().then(({ data }) => {
-      setTerminalAuthenticated(!!data.user);
+    // Check if terminal is authenticated (must be role='terminal')
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) {
+        setTerminalAuthenticated(false);
+        return;
+      }
+
+      // Check if user has terminal role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      setTerminalAuthenticated(profile?.role === 'terminal');
     });
 
     // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setTerminalAuthenticated(!!session?.user);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) {
+        setTerminalAuthenticated(false);
+        return;
+      }
+
+      // Check if user has terminal role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      setTerminalAuthenticated(profile?.role === 'terminal');
     });
 
     return () => subscription.unsubscribe();

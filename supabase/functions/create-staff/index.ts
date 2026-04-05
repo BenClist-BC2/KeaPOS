@@ -38,13 +38,14 @@ serve(async (req) => {
     // Extract JWT from "Bearer <token>"
     const jwt = authHeader.replace('Bearer ', '');
 
-    // Create client and verify the JWT
-    const supabaseClient = createClient(
+    // Create admin client to verify JWT (service role needed for auth.getUser)
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(jwt);
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(jwt);
     if (userError || !user) {
       return new Response(
         JSON.stringify({ error: `Unauthorized: ${userError?.message || 'No user'}` }),
@@ -53,7 +54,7 @@ serve(async (req) => {
     }
 
     // Get user's profile to verify role and company
-    const { data: profile, error: profileError } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('company_id, role')
       .eq('id', user.id)
@@ -91,13 +92,6 @@ serve(async (req) => {
 
     // Use company_id from authenticated user's profile (not from request)
     const company_id = profile.company_id;
-
-    // Create admin client
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
 
     // Hash PIN
     const pin_hash = await bcrypt.hash(pin);

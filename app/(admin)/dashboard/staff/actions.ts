@@ -80,10 +80,34 @@ export async function inviteStaff(formData: FormData) {
       return { error: profileError.message };
     }
   } else {
-    // PIN-only user: no auth.users row
-    const profileId = crypto.randomUUID();
+    // PIN-only user: create auth user with generated email
+    const staffId = crypto.randomUUID();
+    const generatedEmail = `staff-${staffId}@keapos.internal`;
+
+    // Generate a random password (won't be used, but required for auth user)
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const array = new Uint8Array(16);
+    crypto.getRandomValues(array);
+    const generatedPassword = Array.from(array)
+      .map(byte => chars[byte % chars.length])
+      .join('');
+
+    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email: generatedEmail,
+      password: generatedPassword,
+      email_confirm: true,
+    });
+
+    if (createError) {
+      return { error: createError.message };
+    }
+
+    if (!newUser.user) {
+      return { error: 'Failed to create user' };
+    }
+
     const { error: profileError } = await supabaseAdmin.from('profiles').insert({
-      id: profileId,
+      id: newUser.user.id,
       company_id: profile.company_id,
       location_id: location_id || null,
       role,

@@ -105,3 +105,21 @@ insert into restaurant_tables (location_id, company_id, number, capacity, area) 
   ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000001', '4',  2, 'Main Floor'),
   ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000001', '5',  8, 'Private Dining'),
   ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000001', 'B1', 3, 'Bar');
+
+-- ============================================================
+-- Developer profiles
+-- Each developer should add their own row here using their auth
+-- user ID from their dev Supabase project. The conditional insert
+-- means the row is silently skipped if the user doesn't exist in
+-- the current environment (so other devs' seeds don't break).
+-- ============================================================
+insert into profiles (id, company_id, role, full_name)
+select
+  '12aa8c4e-7671-4ec6-9aaf-bbd70f6a2388',
+  '00000000-0000-0000-0000-000000000001',
+  'owner',
+  'Ben Clist'
+where exists (
+  select 1 from auth.users where id = '12aa8c4e-7671-4ec6-9aaf-bbd70f6a2388'
+)
+on conflict (id) do nothing;

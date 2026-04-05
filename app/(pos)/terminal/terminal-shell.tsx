@@ -20,51 +20,27 @@ export function TerminalShell() {
   useEffect(() => {
     const supabase = createClient();
 
-    // Check if terminal is authenticated (must be role='terminal')
-    console.log('[Terminal] Checking auth...');
-    supabase.auth.getUser()
-      .then(async ({ data, error: userError }) => {
-        console.log('[Terminal] getUser result:', { user: data.user?.id, error: userError });
+    console.log('[Terminal] Setting up auth...');
 
-        if (!data.user) {
-          console.log('[Terminal] No user, showing pairing screen');
-          setTerminalAuthenticated(false);
-          return;
-        }
-
-        // Check if user has terminal role
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
-
-        console.log('[Terminal] Profile check:', { role: profile?.role, error: profileError });
-        setTerminalAuthenticated(profile?.role === 'terminal');
-      })
-      .catch((err) => {
-        // On error, assume not authenticated
-        console.error('[Terminal] Auth check error:', err);
-        setTerminalAuthenticated(false);
-      });
-
-    // Subscribe to auth changes
+    // Subscribe to auth changes (fires immediately with current session)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[Terminal] Auth state change:', event, session?.user?.id);
       try {
         if (!session?.user) {
+          console.log('[Terminal] No user session');
           setTerminalAuthenticated(false);
           return;
         }
 
         // Check if user has terminal role
+        console.log('[Terminal] Checking profile for user:', session.user.id);
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', session.user.id)
           .single();
 
-        console.log('[Terminal] Profile from auth change:', { role: profile?.role, error: profileError });
+        console.log('[Terminal] Profile result:', { role: profile?.role, error: profileError });
         setTerminalAuthenticated(profile?.role === 'terminal');
       } catch (err) {
         console.error('[Terminal] Auth change handler error:', err);
@@ -72,7 +48,10 @@ export function TerminalShell() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('[Terminal] Cleaning up auth subscription');
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Loading state while checking auth

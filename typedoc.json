@@ -1,0 +1,13 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["lib/**/*.ts", "lib/**/*.tsx"],
+  "entryPointStrategy": "expand",
+  "out": "docs/api",
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "skipErrorChecking": true,
+  "readme": "none",
+  "name": "KeaPOS API Reference",
+  "includeVersion": true,
+  "categorizeByGroup": true
+}

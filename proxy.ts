@@ -7,7 +7,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // If Supabase isn't configured yet (e.g. local dev without .env.local),
   // pass all requests through so the app is still browsable.
   if (!supabaseConfigured) {

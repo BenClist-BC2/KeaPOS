@@ -14,7 +14,7 @@
     "test:e2e:ui": "playwright test --ui",
     "docs": "typedoc",
     "db:migrate": "npx supabase db push",
-    "db:seed": "npx supabase db execute --file supabase/seed.sql",
+    "db:seed": "node scripts/seed.mjs",
     "db:new": "npx supabase migration new",
     "db:reset": "npx supabase db reset",
     "db:types": "npx supabase gen types typescript --linked > lib/supabase/database.types.ts",

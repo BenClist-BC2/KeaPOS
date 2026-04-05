@@ -21,29 +21,36 @@ export function TerminalShell() {
     const supabase = createClient();
 
     // Check if terminal is authenticated (must be role='terminal')
+    console.log('[Terminal] Checking auth...');
     supabase.auth.getUser()
-      .then(async ({ data }) => {
+      .then(async ({ data, error: userError }) => {
+        console.log('[Terminal] getUser result:', { user: data.user?.id, error: userError });
+
         if (!data.user) {
+          console.log('[Terminal] No user, showing pairing screen');
           setTerminalAuthenticated(false);
           return;
         }
 
         // Check if user has terminal role
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', data.user.id)
           .single();
 
+        console.log('[Terminal] Profile check:', { role: profile?.role, error: profileError });
         setTerminalAuthenticated(profile?.role === 'terminal');
       })
-      .catch(() => {
+      .catch((err) => {
         // On error, assume not authenticated
+        console.error('[Terminal] Auth check error:', err);
         setTerminalAuthenticated(false);
       });
 
     // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Terminal] Auth state change:', event, session?.user?.id);
       try {
         if (!session?.user) {
           setTerminalAuthenticated(false);
@@ -51,14 +58,16 @@ export function TerminalShell() {
         }
 
         // Check if user has terminal role
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', session.user.id)
           .single();
 
+        console.log('[Terminal] Profile from auth change:', { role: profile?.role, error: profileError });
         setTerminalAuthenticated(profile?.role === 'terminal');
-      } catch {
+      } catch (err) {
+        console.error('[Terminal] Auth change handler error:', err);
         setTerminalAuthenticated(false);
       }
     });

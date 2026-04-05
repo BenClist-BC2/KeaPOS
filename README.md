@@ -5,9 +5,9 @@ A cloud-based, offline-capable POS system designed specifically for New Zealand 
 ## Tech Stack
 
 ### Core Framework
-- **Next.js 14+** (App Router) with TypeScript
-- **React 18** for UI components
-- **Tailwind CSS** for styling
+- **Next.js 16** (App Router) with TypeScript
+- **React 19** for UI components
+- **Tailwind CSS 4** for styling
 
 ### Backend & Database
 - **Supabase** - PostgreSQL database with authentication, realtime, and storage
@@ -26,29 +26,39 @@ A cloud-based, offline-capable POS system designed specifically for New Zealand 
 - **React Hook Form** - Form handling
 - **Zod** - Schema validation
 
+### Testing
+- **Vitest** - Unit and component tests
+- **React Testing Library** - Component rendering and interaction
+- **Playwright** - End-to-end browser tests
+
 ## Project Structure
 
 ```
 keapos/
 ├── app/
-│   ├── (admin)/          # Admin portal routes (server-rendered)
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-│   ├── (pos)/            # POS terminal routes (client-rendered, offline-first)
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-│   ├── api/              # API routes
-│   ├── layout.tsx        # Root layout with providers
-│   └── globals.css       # Global styles
+│   ├── (admin)/              # Admin portal routes (server-rendered)
+│   │   ├── layout.tsx        # Sidebar navigation layout
+│   │   └── dashboard/
+│   │       └── page.tsx      # Dashboard with stats and setup checklist
+│   ├── (pos)/                # POS terminal routes (client-rendered, offline-first)
+│   │   ├── layout.tsx        # Fullscreen layout
+│   │   └── terminal/
+│   │       └── page.tsx      # POS terminal interface
+│   ├── layout.tsx            # Root layout with providers
+│   └── globals.css           # Global styles
 ├── lib/
-│   ├── supabase/         # Supabase client configuration
-│   ├── db/               # Dexie offline database
-│   ├── stores/           # Zustand stores
-│   ├── providers/        # React providers (Query, Auth, etc.)
-│   └── utils/            # Utility functions
+│   ├── supabase/             # Supabase client configuration
+│   ├── db/                   # Dexie offline database schema and helpers
+│   └── providers/            # React providers (TanStack Query, etc.)
+├── tests/
+│   ├── setup.ts              # Vitest global setup (fake-indexeddb, jest-dom)
+│   ├── unit/                 # Unit and component tests
+│   └── e2e/                  # Playwright end-to-end tests
 ├── public/
-│   └── manifest.json     # PWA manifest
-└── package.json
+│   └── manifest.json         # PWA manifest
+├── playwright.config.ts      # Playwright configuration
+├── vitest.config.ts          # Vitest configuration
+└── typedoc.json              # API documentation configuration
 ```
 
 ## Multi-Tenancy Architecture
@@ -128,13 +138,40 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) for the admin portal.
-Open [http://localhost:3000/pos](http://localhost:3000/pos) for the POS terminal.
+Open [http://localhost:3000](http://localhost:3000) for the admin portal (redirects to `/dashboard`).
+Open [http://localhost:3000/terminal](http://localhost:3000/terminal) for the POS terminal.
 
 ### Build
 
 ```bash
 npm run build
+```
+
+## Testing
+
+### Unit & Component Tests
+
+```bash
+npm test                 # Run all unit tests once
+npm run test:watch       # Watch mode (re-runs on file changes)
+npm run test:coverage    # Run with coverage report (output: coverage/)
+```
+
+Tests live in `tests/unit/` and use Vitest + React Testing Library with fake-indexeddb for IndexedDB isolation.
+
+### End-to-End Tests
+
+```bash
+npm run test:e2e         # Run Playwright tests (starts dev server automatically)
+npm run test:e2e:ui      # Open Playwright's visual test runner
+```
+
+E2E tests live in `tests/e2e/` and run against Chromium.
+
+### API Documentation
+
+```bash
+npm run docs             # Generate TypeDoc docs into docs/api/
 ```
 
 ## Features
@@ -194,15 +231,14 @@ npm run build
 
 ## Next Steps
 
-This is the initial foundation. Next phases include:
+Foundation and testing infrastructure are in place. Next phases include:
 
-1. **Database Schema Design** - Tables for companies, locations, users, menu items, transactions
-2. **Authentication Flow** - Supabase Auth integration with role management
-3. **Admin Portal** - Company setup, menu management
-4. **POS Interface** - Order taking, payment processing
+1. **Database Schema** - Supabase SQL migrations for companies, locations, users, menu items, transactions
+2. **Authentication** - Supabase Auth login/logout with role management (owner, manager, staff)
+3. **Admin Portal** - Company setup, menu management, staff management
+4. **POS Terminal** - Order taking, payment processing, offline queue
 5. **Sync Logic** - Offline queue processing and conflict resolution
-6. **Hardware Integration** - Printer and payment terminal APIs
-7. **Testing** - Unit tests, integration tests, RLS policy tests
+6. **Hardware Integration** - Printer and payment terminal APIs (Windcave/Smartpay)
 
 ## License
 

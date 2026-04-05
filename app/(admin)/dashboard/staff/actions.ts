@@ -1,17 +1,19 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createClient as createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
+import bcrypt from 'bcryptjs';
 import type { UserRole } from '@/lib/types';
 
 /**
- * Create a staff member via Supabase Edge Function.
+ * Create a staff member.
  * - If email provided: creates a Supabase auth user + sends invite email (for owners/managers)
  * - If no email: creates PIN-only profile (for terminal-only staff)
- * - PIN is hashed in the Edge Function before storing
+ * - PIN is hashed before storing
  */
 export async function inviteStaff(formData: FormData) {
-  const supabase = await createClient();
+  const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Not authenticated' };
 
@@ -37,32 +39,56 @@ export async function inviteStaff(formData: FormData) {
     return { error: 'Invalid role' };
   }
 
-  // Get session to pass auth to Edge Function
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    return { error: 'No active session' };
-  }
+  // Create admin client
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
 
-  // Call Supabase Edge Function to create staff
-  const { data: result, error } = await supabase.functions.invoke('create-staff', {
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: {
-      full_name,
-      pin,
-      email,
+  // Hash PIN
+  const pin_hash = await bcrypt.hash(pin, 10);
+
+  // If email provided: create full auth user
+  if (email) {
+    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email);
+
+    if (createError) {
+      return { error: createError.message };
+    }
+
+    if (!newUser.user) {
+      return { error: 'Failed to create user' };
+    }
+
+    // Create profile
+    const { error: profileError } = await supabaseAdmin.from('profiles').insert({
+      id: newUser.user.id,
+      company_id: profile.company_id,
+      location_id: location_id || null,
       role,
-      location_id,
-    },
-  });
+      full_name,
+      pin_hash,
+    });
 
-  if (error) {
-    return { error: error.message ?? 'Failed to create staff member' };
-  }
+    if (profileError) {
+      return { error: profileError.message };
+    }
+  } else {
+    // PIN-only user: no auth.users row
+    const profileId = crypto.randomUUID();
+    const { error: profileError } = await supabaseAdmin.from('profiles').insert({
+      id: profileId,
+      company_id: profile.company_id,
+      location_id: location_id || null,
+      role,
+      full_name,
+      pin_hash,
+    });
 
-  if (result?.error) {
-    return { error: result.error };
+    if (profileError) {
+      return { error: profileError.message };
+    }
   }
 
   revalidatePath('/dashboard/staff');
@@ -70,7 +96,7 @@ export async function inviteStaff(formData: FormData) {
 }
 
 export async function updateStaffRole(staffId: string, formData: FormData) {
-  const supabase = await createClient();
+  const supabase = await createServerClient();
   const role = formData.get('role') as UserRole;
   const location_id = (formData.get('location_id') as string) || null;
   const active = formData.get('active') === 'true';

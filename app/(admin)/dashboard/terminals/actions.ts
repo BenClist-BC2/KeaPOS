@@ -1,7 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createClient as createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 
 export interface CreateTerminalResult {
   terminal_id: string | null;
@@ -15,7 +16,7 @@ export interface CreateTerminalResult {
  * returns a pairing code (base64 JSON) for QR code display.
  */
 export async function createTerminal(formData: FormData): Promise<CreateTerminalResult> {
-  const supabase = await createClient();
+  const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { terminal_id: null, pairing_code: null, error: 'Not authenticated' };
 
@@ -35,34 +36,76 @@ export async function createTerminal(formData: FormData): Promise<CreateTerminal
   if (!name) return { terminal_id: null, pairing_code: null, error: 'Terminal name is required' };
   if (!location_id) return { terminal_id: null, pairing_code: null, error: 'Location is required' };
 
-  // Get session to pass auth to Edge Function
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    return { terminal_id: null, pairing_code: null, error: 'No active session' };
-  }
+  // Create admin client
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
 
-  // Call Supabase Edge Function to create terminal
-  const { data: result, error } = await supabase.functions.invoke('create-terminal', {
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: { name, location_id },
+  // Generate terminal credentials
+  const terminalId = crypto.randomUUID();
+  const terminalEmail = `terminal-${terminalId}@keapos.internal`;
+
+  // Generate secure random password (16 chars, alphanumeric)
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  const terminalPassword = Array.from(array)
+    .map(byte => chars[byte % chars.length])
+    .join('');
+
+  // Create terminal auth user
+  const { data: terminalUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+    email: terminalEmail,
+    password: terminalPassword,
+    email_confirm: true,
   });
 
-  if (error) {
-    return { terminal_id: null, pairing_code: null, error: error.message ?? 'Failed to create terminal' };
+  if (createUserError || !terminalUser.user) {
+    return { terminal_id: null, pairing_code: null, error: createUserError?.message ?? 'Failed to create terminal user' };
   }
 
-  if (result?.error) {
-    return { terminal_id: null, pairing_code: null, error: result.error };
+  // Create terminal profile
+  const { error: profileError } = await supabaseAdmin.from('profiles').insert({
+    id: terminalUser.user.id,
+    company_id: profile.company_id,
+    location_id,
+    role: 'terminal',
+    full_name: name,
+    active: true,
+  });
+
+  if (profileError) {
+    return { terminal_id: null, pairing_code: null, error: profileError.message };
   }
+
+  // Create terminal record
+  const { data: terminal, error: terminalError } = await supabaseAdmin.from('terminals').insert({
+    id: terminalId,
+    company_id: profile.company_id,
+    location_id,
+    name,
+  }).select('id').single();
+
+  if (terminalError || !terminal) {
+    return { terminal_id: null, pairing_code: null, error: terminalError?.message ?? 'Failed to create terminal record' };
+  }
+
+  // Generate pairing code (base64 JSON)
+  const pairingData = {
+    terminal_id: terminal.id,
+    email: terminalEmail,
+    password: terminalPassword,
+  };
+  const pairingCode = btoa(JSON.stringify(pairingData));
 
   revalidatePath('/dashboard/terminals');
-  return { terminal_id: result.terminal_id, pairing_code: result.pairing_code, error: null };
+  return { terminal_id: terminal.id, pairing_code: pairingCode, error: null };
 }
 
 export async function updateTerminal(id: string, formData: FormData) {
-  const supabase = await createClient();
+  const supabase = await createServerClient();
   const name = (formData.get('name') as string)?.trim();
   const active = formData.get('active') === 'true';
 

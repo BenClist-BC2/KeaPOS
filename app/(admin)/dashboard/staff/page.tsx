@@ -23,7 +23,7 @@ export default async function StaffPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Staff</h1>
         <p className="text-gray-600 text-sm mt-1">
-          Manage your team. Invited staff receive an email to set their password.
+          Manage your team. Add managers with email for admin access, or staff with PIN-only for terminal access.
         </p>
       </div>
 

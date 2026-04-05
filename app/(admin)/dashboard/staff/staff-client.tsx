@@ -34,18 +34,20 @@ interface InviteFormProps {
 
 function InviteForm({ locations, onDone }: InviteFormProps) {
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState<{ hasEmail: boolean } | null>(null);
   const [pending, startTransition] = useTransition();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const hasEmail = !!(fd.get('email') as string)?.trim();
+
     startTransition(async () => {
       const result = await inviteStaff(fd);
       if (result.error) {
         setError(result.error);
       } else {
-        setSuccess(true);
+        setSuccess({ hasEmail });
       }
     });
   }
@@ -53,10 +55,16 @@ function InviteForm({ locations, onDone }: InviteFormProps) {
   if (success) {
     return (
       <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-4">
-        <p className="font-medium">Invitation sent!</p>
-        <p className="mt-1 text-green-600">The staff member will receive an email to set their password.</p>
+        <p className="font-medium">
+          {success.hasEmail ? 'Invitation sent!' : 'Staff member added!'}
+        </p>
+        <p className="mt-1 text-green-600">
+          {success.hasEmail
+            ? 'They will receive an email invitation to set their password and access the admin portal.'
+            : 'They can now log in to any terminal with their PIN.'}
+        </p>
         <button
-          onClick={() => { setSuccess(false); onDone(); }}
+          onClick={() => { setSuccess(null); onDone(); }}
           className="mt-3 text-sm text-green-700 underline"
         >
           Done
@@ -67,6 +75,14 @@ function InviteForm({ locations, onDone }: InviteFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
+        <p className="font-medium">Two types of team members:</p>
+        <ul className="mt-1 ml-4 list-disc space-y-1 text-blue-700">
+          <li><strong>With email:</strong> Can access admin portal + use terminal with PIN (Owner/Manager)</li>
+          <li><strong>Without email:</strong> Terminal access only with PIN (Staff)</li>
+        </ul>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Full name *</label>
@@ -78,7 +94,7 @@ function InviteForm({ locations, onDone }: InviteFormProps) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">PIN *</label>
+          <label className="block text-sm font-medium text-gray-700">PIN * <span className="text-gray-400 font-normal">(for terminal login)</span></label>
           <input
             name="pin"
             type="text"
@@ -92,7 +108,7 @@ function InviteForm({ locations, onDone }: InviteFormProps) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Email <span className="text-gray-400 font-normal">(optional, for admin portal access)</span>
+            Email <span className="text-gray-400 font-normal">(optional - for admin portal)</span>
           </label>
           <input
             name="email"
@@ -133,7 +149,7 @@ function InviteForm({ locations, onDone }: InviteFormProps) {
           disabled={pending}
           className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-700 disabled:opacity-50"
         >
-          {pending ? 'Sending invite…' : 'Send invite'}
+          {pending ? 'Adding…' : 'Add team member'}
         </button>
         <button type="button" onClick={onDone} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
           Cancel
@@ -221,10 +237,10 @@ export function StaffClient({ staff, locations }: StaffClientProps) {
 
   return (
     <div className="space-y-4">
-      {/* Invite panel */}
+      {/* Add team member panel */}
       {inviting ? (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">Invite staff member</h2>
+          <h2 className="font-semibold text-gray-900 mb-4">Add team member</h2>
           <InviteForm locations={locations} onDone={() => setInviting(false)} />
         </div>
       ) : (
@@ -232,7 +248,7 @@ export function StaffClient({ staff, locations }: StaffClientProps) {
           onClick={() => setInviting(true)}
           className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-700"
         >
-          + Invite staff member
+          + Add team member
         </button>
       )}
 

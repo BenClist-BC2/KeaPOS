@@ -20,38 +20,19 @@ export function TerminalShell() {
   useEffect(() => {
     const supabase = createClient();
 
-    console.log('[Terminal] Setting up auth...');
-
     // Subscribe to auth changes (fires immediately with current session)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[Terminal] Auth state change:', event, session?.user?.id);
-      try {
-        if (!session?.user) {
-          console.log('[Terminal] No user session');
-          setTerminalAuthenticated(false);
-          return;
-        }
-
-        // Check if user has terminal role
-        console.log('[Terminal] Checking profile for user:', session.user.id);
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-
-        console.log('[Terminal] Profile result:', { role: profile?.role, error: profileError });
-        setTerminalAuthenticated(profile?.role === 'terminal');
-      } catch (err) {
-        console.error('[Terminal] Auth change handler error:', err);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session?.user) {
         setTerminalAuthenticated(false);
+        return;
       }
+
+      // Check if user is a terminal (terminals have email pattern: terminal-*@keapos.internal)
+      const isTerminal = session.user.email?.startsWith('terminal-') && session.user.email?.endsWith('@keapos.internal');
+      setTerminalAuthenticated(isTerminal);
     });
 
-    return () => {
-      console.log('[Terminal] Cleaning up auth subscription');
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   // Loading state while checking auth

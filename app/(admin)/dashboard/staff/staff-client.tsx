@@ -263,16 +263,16 @@ export function StaffClient({ staff, locations }: StaffClientProps) {
       ) : (
         <div className="flex gap-2">
           <button
-            onClick={() => setAddingType('manager')}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
-          >
-            + Add Manager
-          </button>
-          <button
             onClick={() => setAddingType('staff')}
             className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-700"
           >
             + Add Staff Member
+          </button>
+          <button
+            onClick={() => setAddingType('manager')}
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+          >
+            + Add Manager
           </button>
         </div>
       )}

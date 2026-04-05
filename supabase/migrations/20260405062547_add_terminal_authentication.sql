@@ -1,12 +1,9 @@
 -- ============================================================
 -- Terminal Authentication Support
 -- ============================================================
--- Adds terminal role for device-level authentication and PIN
--- login for all users (owners, managers, staff).
+-- Adds terminals table, RLS policies for terminal role.
+-- Requires: 20260405063839_add_terminal_role_enum.sql (must run first)
 -- ============================================================
-
--- Add 'terminal' role for POS terminal devices
-alter type user_role add value 'terminal';
 
 -- Terminals table: tracks physical POS terminal devices
 create table terminals (

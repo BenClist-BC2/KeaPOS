@@ -58,7 +58,7 @@ function CategoryForm({ category, onDone }: CategoryFormProps) {
           name="name"
           defaultValue={category?.name}
           required
-          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
         />
       </div>
       <div>
@@ -67,7 +67,7 @@ function CategoryForm({ category, onDone }: CategoryFormProps) {
           name="sort_order"
           type="number"
           defaultValue={category?.sort_order ?? 0}
-          className="mt-1 block w-32 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          className="mt-1 block w-32 border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
         />
       </div>
       {category && (
@@ -142,7 +142,7 @@ function ProductForm({ product, categories, defaultCategoryId, onDone }: Product
             name="name"
             defaultValue={product?.name}
             required
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
         </div>
         <div>
@@ -151,7 +151,7 @@ function ProductForm({ product, categories, defaultCategoryId, onDone }: Product
             name="category_id"
             defaultValue={product?.category_id ?? defaultCategoryId}
             required
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
           >
             {categories.map(c => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -169,7 +169,7 @@ function ProductForm({ product, categories, defaultCategoryId, onDone }: Product
               min="0"
               defaultValue={defaultPrice}
               required
-              className="block w-full border border-gray-300 rounded-md pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className="block w-full border border-gray-300 rounded-md pl-7 pr-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
             />
           </div>
         </div>
@@ -179,7 +179,7 @@ function ProductForm({ product, categories, defaultCategoryId, onDone }: Product
             name="description"
             defaultValue={product?.description ?? ''}
             rows={2}
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
         </div>
         <div>
@@ -188,7 +188,7 @@ function ProductForm({ product, categories, defaultCategoryId, onDone }: Product
             name="sort_order"
             type="number"
             defaultValue={product?.sort_order ?? 0}
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
         </div>
         {product && (

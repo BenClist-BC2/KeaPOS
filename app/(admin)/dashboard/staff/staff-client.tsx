@@ -74,7 +74,7 @@ function InviteForm({ locations, onDone }: InviteFormProps) {
             name="full_name"
             required
             placeholder="e.g. Jane Smith"
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
         </div>
         <div>
@@ -84,7 +84,7 @@ function InviteForm({ locations, onDone }: InviteFormProps) {
             type="email"
             required
             placeholder="jane@example.co.nz"
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
         </div>
         <div>
@@ -92,7 +92,7 @@ function InviteForm({ locations, onDone }: InviteFormProps) {
           <select
             name="role"
             defaultValue="staff"
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
           >
             {ROLES.map(r => (
               <option key={r.value} value={r.value}>{r.label}</option>
@@ -103,7 +103,7 @@ function InviteForm({ locations, onDone }: InviteFormProps) {
           <label className="block text-sm font-medium text-gray-700">Default location</label>
           <select
             name="location_id"
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
           >
             <option value="">Any location</option>
             {locations.map(loc => (
@@ -157,7 +157,7 @@ function EditStaffForm({ staff, locations, onDone }: EditStaffFormProps) {
       <select
         name="role"
         defaultValue={staff.role}
-        className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+        className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
       >
         {ROLES.map(r => (
           <option key={r.value} value={r.value}>{r.label}</option>
@@ -166,7 +166,7 @@ function EditStaffForm({ staff, locations, onDone }: EditStaffFormProps) {
       <select
         name="location_id"
         defaultValue={staff.location_id ?? ''}
-        className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+        className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
       >
         <option value="">Any location</option>
         {locations.map(loc => (

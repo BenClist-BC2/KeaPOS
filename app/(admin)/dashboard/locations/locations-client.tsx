@@ -47,7 +47,7 @@ function LocationForm({ location, onDone }: LocationFormProps) {
             defaultValue={location?.name}
             required
             placeholder="e.g. Cuba Street"
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
         </div>
         <div className="col-span-2">
@@ -56,7 +56,7 @@ function LocationForm({ location, onDone }: LocationFormProps) {
             name="address"
             defaultValue={location?.address ?? ''}
             placeholder="e.g. 123 Cuba Street, Te Aro, Wellington 6011"
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
         </div>
         <div>
@@ -66,7 +66,7 @@ function LocationForm({ location, onDone }: LocationFormProps) {
             type="tel"
             defaultValue={location?.phone ?? ''}
             placeholder="e.g. 04 801 0001"
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
         </div>
         <div>
@@ -74,7 +74,7 @@ function LocationForm({ location, onDone }: LocationFormProps) {
           <select
             name="timezone"
             defaultValue={location?.timezone ?? 'Pacific/Auckland'}
-            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
           >
             {NZ_TIMEZONES.map(tz => (
               <option key={tz} value={tz}>{tz}</option>

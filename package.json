@@ -13,11 +13,11 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "docs": "typedoc",
-    "db:migrate": "supabase db push",
-    "db:new": "supabase migration new",
-    "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --linked > lib/supabase/database.types.ts",
-    "db:diff": "supabase db diff"
+    "db:migrate": "npx supabase db push",
+    "db:new": "npx supabase migration new",
+    "db:reset": "npx supabase db reset",
+    "db:types": "npx supabase gen types typescript --linked > lib/supabase/database.types.ts",
+    "db:diff": "npx supabase db diff"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -49,6 +49,7 @@
     "eslint-config-next": "16.1.1",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.0.1",
+    "supabase": "^2.84.10",
     "tailwindcss": "^4",
     "typedoc": "^0.28.18",
     "typescript": "^5",

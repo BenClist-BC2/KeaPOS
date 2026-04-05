@@ -171,18 +171,18 @@ Commit the generated file so the whole team gets updated types immediately.
 ### Prerequisites
 - Node.js 20+
 - npm
-- [Supabase CLI](https://supabase.com/docs/guides/cli/getting-started)
-- A Supabase account with a project created for your dev branch
+- A Supabase account with a project created
 
 ### 1. Install dependencies
 
 ```bash
 npm install
+# The Supabase CLI is included as a dev dependency — no separate install needed
 ```
 
 ### 2. Set up environment variables
 
-Copy `.env.local` (already in the repo with empty values) and fill in your dev Supabase project credentials — find them at **Supabase Dashboard → Settings → API**:
+Fill in `.env.local` with your dev Supabase project credentials — find them at **Supabase Dashboard → Settings → API**:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -191,18 +191,35 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### 3. Link and migrate your Supabase project
+### 3. Link, migrate, and seed your Supabase project
 
 ```bash
-supabase login
-supabase link --project-ref your-project-ref
-npm run db:migrate
+npx supabase login
+npx supabase link --project-ref your-project-ref
+npm run db:migrate   # applies schema migrations
+npm run db:seed      # loads sample company, menu, and tables
 ```
 
-### 4. (Optional) Load seed data
+### 4. Create your first user
+
+- Go to **Supabase Dashboard → Authentication → Users → Add user**
+- Enter your email and password, copy the generated **User UID**
+- Run this in **SQL Editor** (use the UID and your name):
+
+```sql
+insert into profiles (id, company_id, role, full_name)
+values (
+  '<your-user-uid>',
+  '00000000-0000-0000-0000-000000000001',
+  'owner',
+  'Your Name'
+);
+```
+
+### 6. Start the dev server
 
 ```bash
-supabase db reset   # runs all migrations + seed.sql
+npm run dev
 ```
 
 ### 5. Start the dev server

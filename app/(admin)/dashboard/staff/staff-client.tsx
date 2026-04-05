@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import type { Profile, Location, UserRole } from '@/lib/types';
-import { inviteStaff, updateStaffRole } from './actions';
+import { inviteStaff, updateStaffRole, deleteStaff } from './actions';
 
 const ROLES: { value: UserRole; label: string }[] = [
   { value: 'owner',   label: 'Owner'   },
@@ -192,6 +192,17 @@ function EditStaffForm({ staff, locations, onDone }: EditStaffFormProps) {
     });
   }
 
+  async function handleDelete() {
+    if (confirm(`Delete ${staff.full_name}? This cannot be undone if they have no transactions.`)) {
+      const result = await deleteStaff(staff.id);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        onDone();
+      }
+    }
+  }
+
   return (
     <form onSubmit={handleSubmit} className="flex items-center gap-3 flex-wrap">
       <select
@@ -219,16 +230,25 @@ function EditStaffForm({ staff, locations, onDone }: EditStaffFormProps) {
         <input type="hidden" name="active" value="false" />
       </label>
       {error && <ErrorMsg message={error} />}
-      <button
-        type="submit"
-        disabled={pending}
-        className="px-3 py-1 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-700 disabled:opacity-50"
-      >
-        {pending ? '…' : 'Save'}
-      </button>
-      <button type="button" onClick={onDone} className="text-sm text-gray-500 hover:text-gray-900">
-        Cancel
-      </button>
+      <div className="flex gap-2 ml-auto">
+        <button
+          type="submit"
+          disabled={pending}
+          className="px-3 py-1 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-700 disabled:opacity-50"
+        >
+          {pending ? '…' : 'Save'}
+        </button>
+        <button
+          type="button"
+          onClick={handleDelete}
+          className="px-3 py-1 text-sm text-red-600 hover:text-red-800"
+        >
+          Delete
+        </button>
+        <button type="button" onClick={onDone} className="text-sm text-gray-500 hover:text-gray-900">
+          Cancel
+        </button>
+      </div>
     </form>
   );
 }

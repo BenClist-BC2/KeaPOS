@@ -136,10 +136,10 @@ export async function deleteTerminal(terminalId: string) {
     return { error: 'Only owners and managers can delete terminals' };
   }
 
-  // Get terminal to verify ownership and get auth user
+  // Get terminal to verify ownership
   const { data: terminal } = await supabase
     .from('terminals')
-    .select('id, company_id')
+    .select('id, company_id, name')
     .eq('id', terminalId)
     .single();
 
@@ -151,7 +151,19 @@ export async function deleteTerminal(terminalId: string) {
     return { error: 'Unauthorized' };
   }
 
-  // Delete terminal record (profile and auth user are handled by cascade/triggers)
+  // Check if terminal has any transactions (orders, payments)
+  const { count: orderCount } = await supabase
+    .from('orders')
+    .select('*', { count: 'exact', head: true })
+    .eq('terminal_id', terminalId);
+
+  if (orderCount && orderCount > 0) {
+    return {
+      error: `Cannot delete terminal "${terminal.name}". It has ${orderCount} transaction(s) in the system. Please deactivate it instead to maintain audit trail.`
+    };
+  }
+
+  // Safe to delete - no transactions
   const { error } = await supabase
     .from('terminals')
     .delete()

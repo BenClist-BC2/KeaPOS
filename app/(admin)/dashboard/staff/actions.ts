@@ -139,3 +139,68 @@ export async function updateStaffRole(staffId: string, formData: FormData) {
   revalidatePath('/dashboard/staff');
   return { error: null };
 }
+
+export async function deleteStaff(staffId: string) {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated' };
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_id, role')
+    .eq('id', user.id)
+    .single();
+  if (!profile) return { error: 'Profile not found' };
+  if (!['owner', 'manager'].includes(profile.role)) {
+    return { error: 'Only owners and managers can delete staff' };
+  }
+
+  // Get staff member to verify ownership
+  const { data: staffMember } = await supabase
+    .from('profiles')
+    .select('id, company_id, full_name')
+    .eq('id', staffId)
+    .single();
+
+  if (!staffMember) {
+    return { error: 'Staff member not found' };
+  }
+
+  if (staffMember.company_id !== profile.company_id) {
+    return { error: 'Unauthorized' };
+  }
+
+  // Check if staff member has any transactions
+  const { count: orderCount } = await supabase
+    .from('orders')
+    .select('*', { count: 'exact', head: true })
+    .eq('staff_id', staffId);
+
+  if (orderCount && orderCount > 0) {
+    return {
+      error: `Cannot delete "${staffMember.full_name}". They have ${orderCount} transaction(s) in the system. Please deactivate them instead to maintain audit trail.`
+    };
+  }
+
+  // Safe to delete - no transactions
+  // Delete profile (auth user deletion handled by admin client if needed)
+  const { error: deleteError } = await supabase
+    .from('profiles')
+    .delete()
+    .eq('id', staffId);
+
+  if (deleteError) return { error: deleteError.message };
+
+  // If they have an auth user, delete it
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+
+  // Try to delete the auth user (will fail silently if already deleted by cascade)
+  await supabaseAdmin.auth.admin.deleteUser(staffId).catch(() => {});
+
+  revalidatePath('/dashboard/staff');
+  return { error: null };
+}

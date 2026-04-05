@@ -32,6 +32,13 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { order_id: null, order_number: null, change_cents: 0, error: 'Terminal not authenticated' };
 
+  // Get terminal ID from user email (format: terminal-{id}@keapos.internal)
+  const terminalIdMatch = user.email?.match(/^terminal-([a-f0-9-]+)@keapos\.internal$/);
+  if (!terminalIdMatch) {
+    return { order_id: null, order_number: null, change_cents: 0, error: 'Invalid terminal user' };
+  }
+  const terminal_id = terminalIdMatch[1];
+
   // Get terminal's company and location
   const { data: terminalProfile } = await supabase
     .from('profiles')
@@ -66,7 +73,8 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
       company_id:     terminalProfile.company_id,
       location_id:    terminalProfile.location_id,
       table_id:       input.table_id || null,
-      staff_id:       input.staff_id,
+      staff_id:       input.staff_id,        // Staff member who created the order
+      terminal_id:    terminal_id,           // Terminal device that processed it
       status:         'open',
       order_type:     input.order_type,
       payment_status: 'unpaid',

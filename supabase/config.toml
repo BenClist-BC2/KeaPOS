@@ -8,7 +8,7 @@ project_id = "keapos"
 # The port the local Supabase DB will run on (local dev only).
 port = 54322
 shadow_port = 54320
-major_version = 15
+major_version = 17
 
 [db.pooler]
 enabled = false

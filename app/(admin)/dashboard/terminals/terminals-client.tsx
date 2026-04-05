@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect } from 'react';
 import type { Location } from '@/lib/types';
-import { createTerminal, updateTerminal, type CreateTerminalResult } from './actions';
+import { createTerminal, updateTerminal, resetTerminalCredentials, type CreateTerminalResult } from './actions';
 
 interface Terminal {
   id: string;
@@ -262,10 +262,22 @@ export function TerminalsClient({ terminals, locations }: TerminalsClientProps) 
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pairingResult, setPairingResult] = useState<CreateTerminalResult | null>(null);
+  const [resetting, setResetting] = useState<string | null>(null);
 
   function handleCreateSuccess(result: CreateTerminalResult) {
     setAdding(false);
     setPairingResult(result);
+  }
+
+  async function handleResetCredentials(terminalId: string) {
+    setResetting(terminalId);
+    const result = await resetTerminalCredentials(terminalId);
+    setResetting(null);
+    if (result.error) {
+      alert(result.error);
+    } else {
+      setPairingResult(result);
+    }
   }
 
   const locationName = (id: string) => locations.find(l => l.id === id)?.name ?? 'Unknown';
@@ -320,12 +332,21 @@ export function TerminalsClient({ terminals, locations }: TerminalsClientProps) 
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={() => setEditingId(term.id)}
-                  className="text-sm text-gray-500 hover:text-gray-900"
-                >
-                  Edit
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleResetCredentials(term.id)}
+                    disabled={resetting === term.id}
+                    className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                  >
+                    {resetting === term.id ? 'Resetting...' : 'Reset Pairing Code'}
+                  </button>
+                  <button
+                    onClick={() => setEditingId(term.id)}
+                    className="text-sm text-gray-500 hover:text-gray-900"
+                  >
+                    Edit
+                  </button>
+                </div>
               </div>
             )}
           </div>

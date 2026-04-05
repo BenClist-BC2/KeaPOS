@@ -120,3 +120,84 @@ export async function updateTerminal(id: string, formData: FormData) {
   revalidatePath('/dashboard/terminals');
   return { error: null };
 }
+
+/**
+ * Reset terminal credentials and generate new pairing code.
+ * This allows re-pairing a terminal if credentials are lost.
+ */
+export async function resetTerminalCredentials(terminalId: string): Promise<CreateTerminalResult> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { terminal_id: null, pairing_code: null, error: 'Not authenticated' };
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_id, role')
+    .eq('id', user.id)
+    .single();
+  if (!profile) return { terminal_id: null, pairing_code: null, error: 'Profile not found' };
+  if (!['owner', 'manager'].includes(profile.role)) {
+    return { terminal_id: null, pairing_code: null, error: 'Only owners and managers can reset terminals' };
+  }
+
+  // Get terminal to verify ownership and get auth user ID
+  const { data: terminal } = await supabase
+    .from('terminals')
+    .select('id, company_id')
+    .eq('id', terminalId)
+    .single();
+
+  if (!terminal) {
+    return { terminal_id: null, pairing_code: null, error: 'Terminal not found' };
+  }
+
+  if (terminal.company_id !== profile.company_id) {
+    return { terminal_id: null, pairing_code: null, error: 'Unauthorized' };
+  }
+
+  // Get terminal's auth user (by email pattern)
+  const terminalEmail = `terminal-${terminalId}@keapos.internal`;
+
+  // Generate new password
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  const newPassword = Array.from(array)
+    .map(byte => chars[byte % chars.length])
+    .join('');
+
+  // Update password using admin client
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+
+  // Get user by email and update password
+  const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+  const terminalUser = users.find(u => u.email === terminalEmail);
+
+  if (!terminalUser) {
+    return { terminal_id: null, pairing_code: null, error: 'Terminal auth user not found' };
+  }
+
+  const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+    terminalUser.id,
+    { password: newPassword }
+  );
+
+  if (updateError) {
+    return { terminal_id: null, pairing_code: null, error: updateError.message };
+  }
+
+  // Generate new pairing code
+  const pairingData = {
+    terminal_id: terminalId,
+    email: terminalEmail,
+    password: newPassword,
+  };
+  const pairingCode = btoa(JSON.stringify(pairingData));
+
+  revalidatePath('/dashboard/terminals');
+  return { terminal_id: terminalId, pairing_code: pairingCode, error: null };
+}

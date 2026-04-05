@@ -22,35 +22,28 @@ serve(async (req) => {
   }
 
   try {
-    // Get authenticated user from JWT
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Extract JWT from "Bearer <token>"
-    const jwt = authHeader.replace('Bearer ', '');
-
-    // Create admin client to verify JWT (service role needed for auth.getUser)
-    const supabaseAdmin = createClient(
+    // Create client with anon key - this reads auth from request automatically
+    const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { autoRefreshToken: false, persistSession: false } }
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
     );
 
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(jwt);
+    // Get authenticated user
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
       return new Response(
-        JSON.stringify({ error: `Unauthorized: ${userError?.message || 'No user'}` }),
+        JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Get user's profile to verify role and company
-    const { data: profile, error: profileError } = await supabaseAdmin
+    const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('company_id, role')
       .eq('id', user.id)
@@ -82,6 +75,13 @@ serve(async (req) => {
 
     // Use company_id from authenticated user's profile (not from request)
     const company_id = profile.company_id;
+
+    // Create admin client for privileged operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
 
     // Generate terminal credentials
     const terminalId = crypto.randomUUID();

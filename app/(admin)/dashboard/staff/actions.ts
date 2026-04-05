@@ -3,13 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import type { UserRole } from '@/lib/types';
-import bcrypt from 'bcryptjs';
 
 /**
- * Create a staff member.
+ * Create a staff member via Supabase Edge Function.
  * - If email provided: creates a Supabase auth user + sends invite email (for owners/managers)
  * - If no email: creates PIN-only profile (for terminal-only staff)
- * - PIN is always hashed with bcrypt before storing
+ * - PIN is hashed in the Edge Function before storing
  */
 export async function inviteStaff(formData: FormData) {
   const supabase = await createClient();
@@ -26,11 +25,11 @@ export async function inviteStaff(formData: FormData) {
     return { error: 'Only owners and managers can invite staff' };
   }
 
-  const email       = (formData.get('email') as string)?.trim() || null;
+  const email       = (formData.get('email') as string)?.trim() || undefined;
   const full_name   = (formData.get('full_name') as string)?.trim();
   const pin         = (formData.get('pin') as string)?.trim();
   const role        = formData.get('role') as UserRole;
-  const location_id = (formData.get('location_id') as string) || null;
+  const location_id = (formData.get('location_id') as string) || undefined;
 
   if (!full_name) return { error: 'Full name is required' };
   if (!pin || pin.length < 4) return { error: 'PIN must be at least 4 digits' };
@@ -38,61 +37,34 @@ export async function inviteStaff(formData: FormData) {
     return { error: 'Invalid role' };
   }
 
-  // Hash the PIN
-  const pin_hash = await bcrypt.hash(pin, 10);
+  // Call Supabase Edge Function to create staff
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const { data: { session } } = await supabase.auth.getSession();
 
-  // If email provided: create full auth user (owner/manager who can access admin portal)
-  // If no email: create PIN-only profile (staff who only access terminal)
-  if (email) {
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const supabaseUrl    = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl || !session) {
+    return { error: 'Configuration error' };
+  }
 
-    if (!serviceRoleKey || !supabaseUrl) {
-      return {
-        error:
-          'Service role key not configured. Set SUPABASE_SERVICE_ROLE_KEY in your environment. ' +
-          'Find it in Supabase Dashboard → Settings → API → Project API keys → service_role (or use a Secret API key with admin privileges).',
-      };
-    }
+  const response = await fetch(`${supabaseUrl}/functions/v1/create-staff`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      full_name,
+      pin,
+      email,
+      role,
+      location_id,
+      company_id: profile.company_id,
+    }),
+  });
 
-    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-    const adminClient = createSupabaseClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+  const result = await response.json();
 
-    // Create auth user with invite (sends magic link email)
-    const { data: newUser, error: createError } = await adminClient.auth.admin.inviteUserByEmail(email);
-    if (createError) return { error: createError.message };
-    if (!newUser.user) return { error: 'Failed to create user' };
-
-    // Create profile linked to the auth user
-    const { error: profileError } = await adminClient
-      .from('profiles')
-      .insert({
-        id:          newUser.user.id,
-        company_id:  profile.company_id,
-        location_id,
-        role,
-        full_name,
-        pin_hash,
-      });
-
-    if (profileError) return { error: profileError.message };
-  } else {
-    // PIN-only user (no auth.users row) — generate UUID for profile.id
-    const profileId = crypto.randomUUID();
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({
-        id:          profileId,
-        company_id:  profile.company_id,
-        location_id,
-        role,
-        full_name,
-        pin_hash,
-      });
-
-    if (profileError) return { error: profileError.message };
+  if (!response.ok || result.error) {
+    return { error: result.error ?? 'Failed to create staff member' };
   }
 
   revalidatePath('/dashboard/staff');

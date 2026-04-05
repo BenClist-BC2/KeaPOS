@@ -3,13 +3,13 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import type { UserRole } from '@/lib/types';
+import bcrypt from 'bcryptjs';
 
 /**
- * Invite a new staff member by creating a Supabase auth user and a profile.
- * Uses the service-role key via the admin API to create the user server-side.
- *
- * NOTE: SUPABASE_SERVICE_ROLE_KEY must be set in environment variables.
- * Without it, this falls back to returning an instructional error.
+ * Create a staff member.
+ * - If email provided: creates a Supabase auth user + sends invite email (for owners/managers)
+ * - If no email: creates PIN-only profile (for terminal-only staff)
+ * - PIN is always hashed with bcrypt before storing
  */
 export async function inviteStaff(formData: FormData) {
   const supabase = await createClient();
@@ -26,52 +26,73 @@ export async function inviteStaff(formData: FormData) {
     return { error: 'Only owners and managers can invite staff' };
   }
 
-  const email     = (formData.get('email') as string)?.trim();
-  const full_name = (formData.get('full_name') as string)?.trim();
-  const role      = formData.get('role') as UserRole;
+  const email       = (formData.get('email') as string)?.trim() || null;
+  const full_name   = (formData.get('full_name') as string)?.trim();
+  const pin         = (formData.get('pin') as string)?.trim();
+  const role        = formData.get('role') as UserRole;
   const location_id = (formData.get('location_id') as string) || null;
 
-  if (!email)     return { error: 'Email is required' };
   if (!full_name) return { error: 'Full name is required' };
+  if (!pin || pin.length < 4) return { error: 'PIN must be at least 4 digits' };
   if (!['owner', 'manager', 'staff'].includes(role)) {
     return { error: 'Invalid role' };
   }
 
-  // Use service-role client to create the auth user (server-side only)
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabaseUrl    = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  // Hash the PIN
+  const pin_hash = await bcrypt.hash(pin, 10);
 
-  if (!serviceRoleKey || !supabaseUrl) {
-    return {
-      error:
-        'Service role key not configured. Set SUPABASE_SERVICE_ROLE_KEY in your environment, ' +
-        'then go to Supabase Dashboard → Authentication → Users → Add user to create the account manually.',
-    };
-  }
+  // If email provided: create full auth user (owner/manager who can access admin portal)
+  // If no email: create PIN-only profile (staff who only access terminal)
+  if (email) {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl    = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-  // Dynamically import to avoid bundling on client
-  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-  const adminClient = createSupabaseClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+    if (!serviceRoleKey || !supabaseUrl) {
+      return {
+        error:
+          'Service role key not configured. Set SUPABASE_SERVICE_ROLE_KEY in your environment.',
+      };
+    }
 
-  // Create auth user with invite (sends magic link email)
-  const { data: newUser, error: createError } = await adminClient.auth.admin.inviteUserByEmail(email);
-  if (createError) return { error: createError.message };
-  if (!newUser.user) return { error: 'Failed to create user' };
-
-  // Create profile linked to the new auth user
-  const { error: profileError } = await adminClient
-    .from('profiles')
-    .insert({
-      id:          newUser.user.id,
-      company_id:  profile.company_id,
-      location_id: location_id || null,
-      role,
-      full_name,
+    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+    const adminClient = createSupabaseClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
     });
 
-  if (profileError) return { error: profileError.message };
+    // Create auth user with invite (sends magic link email)
+    const { data: newUser, error: createError } = await adminClient.auth.admin.inviteUserByEmail(email);
+    if (createError) return { error: createError.message };
+    if (!newUser.user) return { error: 'Failed to create user' };
+
+    // Create profile linked to the auth user
+    const { error: profileError } = await adminClient
+      .from('profiles')
+      .insert({
+        id:          newUser.user.id,
+        company_id:  profile.company_id,
+        location_id,
+        role,
+        full_name,
+        pin_hash,
+      });
+
+    if (profileError) return { error: profileError.message };
+  } else {
+    // PIN-only user (no auth.users row) — generate UUID for profile.id
+    const profileId = crypto.randomUUID();
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id:          profileId,
+        company_id:  profile.company_id,
+        location_id,
+        role,
+        full_name,
+        pin_hash,
+      });
+
+    if (profileError) return { error: profileError.message };
+  }
 
   revalidatePath('/dashboard/staff');
   return { error: null };

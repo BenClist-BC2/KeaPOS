@@ -10,13 +10,14 @@ interface PaymentModalProps {
   lines: CartLine[];
   tableId: string | null;
   customerName: string;
+  staffId: string;
   onSuccess: (result: PlaceOrderResult) => void;
   onClose: () => void;
 }
 
 type PaymentMethod = 'cash' | 'eftpos';
 
-export function PaymentModal({ lines, tableId, customerName, onSuccess, onClose }: PaymentModalProps) {
+export function PaymentModal({ lines, tableId, customerName, staffId, onSuccess, onClose }: PaymentModalProps) {
   const [method, setMethod] = useState<PaymentMethod>('eftpos');
   const [tenderedStr, setTenderedStr] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +45,7 @@ export function PaymentModal({ lines, tableId, customerName, onSuccess, onClose 
       subtotal_cents,
       gst_cents,
       total_cents,
+      staff_id: staffId,
     };
     startTransition(async () => {
       const result = await placeOrder(input);

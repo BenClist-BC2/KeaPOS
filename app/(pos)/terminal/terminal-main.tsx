@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import type { Category, Product } from '@/lib/types';
 import { formatNZD } from '@/lib/types';
 import { useCart, cartTotals } from '@/lib/store/cart';
+import { useActiveStaff } from '@/lib/store/active-staff';
 import { PaymentModal, ReceiptModal } from './payment-modal';
 import type { PlaceOrderResult } from './actions';
 
@@ -131,19 +133,30 @@ function OrderPanel({
 
 // ─── Main terminal ────────────────────────────────────────────
 
-interface TerminalClientProps {
-  categories: Category[];
-  products: Product[];
-}
-
-export function TerminalClient({ categories, products }: TerminalClientProps) {
-  const [activeCategoryId, setActiveCategoryId] = useState<string>(
-    categories[0]?.id ?? ''
-  );
+export function TerminalMain() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeCategoryId, setActiveCategoryId] = useState<string>('');
   const [showPayment, setShowPayment] = useState(false);
   const [receipt, setReceipt] = useState<PlaceOrderResult | null>(null);
 
   const { lines, tableId, customerName, clear } = useCart();
+  const { staff_id, full_name, clearStaff } = useActiveStaff();
+
+  // Fetch menu data on mount
+  useEffect(() => {
+    const supabase = createClient();
+    Promise.all([
+      supabase.from('categories').select('*').eq('active', true).order('sort_order').order('name'),
+      supabase.from('products').select('*').eq('available', true).order('sort_order').order('name'),
+    ]).then(([{ data: cats }, { data: prods }]) => {
+      setCategories((cats as Category[]) ?? []);
+      setProducts((prods as Product[]) ?? []);
+      setActiveCategoryId((cats?.[0] as Category)?.id ?? '');
+      setLoading(false);
+    });
+  }, []);
 
   const visibleProducts = products.filter(
     p => p.category_id === activeCategoryId && p.available
@@ -160,6 +173,14 @@ export function TerminalClient({ categories, products }: TerminalClientProps) {
     setReceipt(null);
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <p className="text-gray-500">Loading menu...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* ── Left: menu browser ── */}
@@ -167,12 +188,15 @@ export function TerminalClient({ categories, products }: TerminalClientProps) {
         {/* Top bar */}
         <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
           <span className="font-bold text-gray-900 text-lg">KeaPOS</span>
-          <Link
-            href="/dashboard"
-            className="text-xs text-gray-400 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100"
-          >
-            Admin
-          </Link>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-600">{full_name}</span>
+            <button
+              onClick={clearStaff}
+              className="text-xs text-gray-500 hover:text-gray-900 px-3 py-1 rounded-lg hover:bg-gray-100"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         {/* Category tabs */}
@@ -225,11 +249,12 @@ export function TerminalClient({ categories, products }: TerminalClientProps) {
       </div>
 
       {/* ── Payment modal ── */}
-      {showPayment && (
+      {showPayment && staff_id && (
         <PaymentModal
           lines={lines}
           tableId={tableId}
           customerName={customerName}
+          staffId={staff_id}
           onSuccess={handlePaymentSuccess}
           onClose={() => setShowPayment(false)}
         />

@@ -78,11 +78,25 @@ function InviteForm({ locations, onDone }: InviteFormProps) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Email address *</label>
+          <label className="block text-sm font-medium text-gray-700">PIN *</label>
+          <input
+            name="pin"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]{4,6}"
+            required
+            placeholder="4-6 digits"
+            maxLength={6}
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Email <span className="text-gray-400 font-normal">(optional, for admin portal access)</span>
+          </label>
           <input
             name="email"
             type="email"
-            required
             placeholder="jane@example.co.nz"
             className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
@@ -99,7 +113,7 @@ function InviteForm({ locations, onDone }: InviteFormProps) {
             ))}
           </select>
         </div>
-        <div>
+        <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700">Default location</label>
           <select
             name="location_id"

@@ -15,6 +15,8 @@ export interface PlaceOrderInput {
   subtotal_cents: number;
   gst_cents: number;
   total_cents: number;
+  /** Staff member who created this order (from PIN login) */
+  staff_id: string;
 }
 
 export interface PlaceOrderResult {
@@ -28,34 +30,43 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { order_id: null, order_number: null, change_cents: 0, error: 'Not authenticated' };
+  if (!user) return { order_id: null, order_number: null, change_cents: 0, error: 'Terminal not authenticated' };
 
-  const { data: profile } = await supabase
+  // Get terminal's company and location
+  const { data: terminalProfile } = await supabase
     .from('profiles')
-    .select('company_id, location_id')
+    .select('company_id, location_id, role')
     .eq('id', user.id)
     .single();
-  if (!profile) return { order_id: null, order_number: null, change_cents: 0, error: 'Profile not found' };
 
-  // Require a location to be set on the profile
-  const location_id = profile.location_id;
-  if (!location_id) {
-    return {
-      order_id: null,
-      order_number: null,
-      change_cents: 0,
-      error: 'No location assigned to your profile. Ask an owner or manager to set your default location.',
-    };
+  if (!terminalProfile) return { order_id: null, order_number: null, change_cents: 0, error: 'Terminal profile not found' };
+  if (terminalProfile.role !== 'terminal') {
+    return { order_id: null, order_number: null, change_cents: 0, error: 'Not a terminal device' };
+  }
+  if (!terminalProfile.location_id) {
+    return { order_id: null, order_number: null, change_cents: 0, error: 'Terminal has no location assigned' };
+  }
+
+  // Verify staff_id belongs to this company
+  const { data: staff } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', input.staff_id)
+    .eq('company_id', terminalProfile.company_id)
+    .single();
+
+  if (!staff) {
+    return { order_id: null, order_number: null, change_cents: 0, error: 'Invalid staff member' };
   }
 
   // Create the order
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .insert({
-      company_id:     profile.company_id,
-      location_id,
+      company_id:     terminalProfile.company_id,
+      location_id:    terminalProfile.location_id,
       table_id:       input.table_id || null,
-      staff_id:       user.id,
+      staff_id:       input.staff_id,
       status:         'open',
       order_type:     input.order_type,
       payment_status: 'unpaid',
@@ -91,9 +102,9 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   // Record payment
   const { error: paymentError } = await supabase.from('payments').insert({
     order_id:    order.id,
-    company_id:  profile.company_id,
-    location_id,
-    staff_id:    user.id,
+    company_id:  terminalProfile.company_id,
+    location_id: terminalProfile.location_id,
+    staff_id:    input.staff_id,
     amount_cents: input.total_cents,
     method:      input.payment_method,
     status:      'completed',

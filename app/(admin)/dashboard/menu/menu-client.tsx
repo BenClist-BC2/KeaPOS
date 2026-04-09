@@ -531,7 +531,7 @@ function RecipeSection({
                   ? setSelectedIngredientId(e.target.value)
                   : setSelectedProductId(e.target.value)
               }
-              className="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+              className="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
             >
               <option value="">
                 {componentType === 'ingredient' ? 'Select an ingredient…' : 'Select a recipe product…'}
@@ -563,7 +563,7 @@ function RecipeSection({
               <select
                 value={unitIsCompatible ? unit : (compatibleUnits[0] ?? unit)}
                 onChange={e => setUnit(e.target.value as Unit)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
               >
                 {compatibleUnits.map(u => <option key={u} value={u}>{UNIT_LABELS[u]}</option>)}
               </select>

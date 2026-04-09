@@ -15,7 +15,7 @@ export default async function AdminLayout({
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 min-h-screen bg-white border-r border-gray-200 flex flex-col shadow-sm">
+        <aside className="w-72 min-h-screen bg-white border-r border-gray-200 flex flex-col shadow-sm">
           {/* Brand */}
           <div className="px-6 py-5 border-b border-gray-100">
             <div className="flex items-center gap-2.5">

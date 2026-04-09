@@ -21,7 +21,7 @@ function ErrorMsg({ message }: { message: string }) {
 }
 
 const inputCls =
-  'block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 ' +
+  'block w-full border border-gray-300 rounded-xl px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 ' +
   'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors';
 
 function DeleteButton({
@@ -121,13 +121,13 @@ function ModifierGroupForm({ group, onDone }: { group?: ModifierGroup; onDone: (
       <div className="flex gap-2">
         <button
           type="submit" disabled={pending}
-          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          className="px-6 py-3.5 bg-indigo-600 text-white text-base font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
         >
           {pending ? 'Saving…' : group ? 'Save changes' : 'Create group'}
         </button>
         <button
           type="button" onClick={onDone}
-          className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+          className="px-6 py-3.5 border border-gray-300 text-gray-700 text-base font-semibold rounded-xl hover:bg-gray-50 transition-colors"
         >
           Cancel
         </button>
@@ -209,7 +209,7 @@ function ModifiersPanel({ group, modifiers }: { group: ModifierGroup; modifiers:
         {!adding && (
           <button
             onClick={() => { setAdding(true); setEditingId(null); }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white text-base font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -245,20 +245,20 @@ function ModifiersPanel({ group, modifiers }: { group: ModifierGroup; modifiers:
       ) : (
         <ul className="divide-y divide-gray-100">
           {modifiers.map(mod => (
-            <li key={mod.id} className="px-5 py-3 hover:bg-gray-50 transition-colors">
+            <li key={mod.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
               {editingId === mod.id ? (
                 <ModifierForm groupId={group.id} modifier={mod} onDone={() => setEditingId(null)} />
               ) : (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="w-2 h-2 rounded-full bg-gray-300 flex-shrink-0" />
-                    <span className="text-sm text-gray-800 font-medium">{mod.name}</span>
-                    <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">price set per product</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-gray-300 flex-shrink-0" />
+                    <span className="text-base text-gray-800 font-medium">{mod.name}</span>
+                    <span className="text-sm text-gray-400 bg-gray-100 px-2.5 py-1 rounded-lg">price set per product</span>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-3 flex-shrink-0">
                     <button
                       onClick={() => { setEditingId(mod.id); setAdding(false); }}
-                      className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                      className="text-sm text-gray-400 hover:text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
                     >
                       Edit
                     </button>

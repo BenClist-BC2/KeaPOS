@@ -70,16 +70,16 @@ function ErrorMsg({ message }: { message: string }) {
 }
 
 const inputCls =
-  'block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 ' +
+  'block w-full border border-gray-300 rounded-xl px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 ' +
   'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors';
 
 const selectCls =
-  'block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white ' +
+  'block w-full border border-gray-300 rounded-xl px-4 py-3.5 text-base text-gray-900 bg-white ' +
   'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors';
 
 function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">
+    <label htmlFor={htmlFor} className="block text-base font-medium text-gray-700 mb-1.5">
       {children}
     </label>
   );
@@ -102,7 +102,7 @@ function PrimaryBtn({
       type={type}
       disabled={pending}
       onClick={onClick}
-      className={`px-4 py-2 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 ${colours}`}
+      className={`px-6 py-3.5 text-white text-base font-semibold rounded-xl disabled:opacity-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 ${colours}`}
     >
       {children}
     </button>
@@ -114,7 +114,7 @@ function SecondaryBtn({ children, onClick }: { children: React.ReactNode; onClic
     <button
       type="button"
       onClick={onClick}
-      className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+      className="px-6 py-3.5 border border-gray-300 text-gray-700 text-base font-semibold rounded-xl hover:bg-gray-50 transition-colors"
     >
       {children}
     </button>
@@ -134,24 +134,24 @@ function DeleteButton({ action }: { action: () => Promise<{ error: string | null
 
   if (confirm) {
     return (
-      <span className="inline-flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1">
-        <span className="text-xs text-red-800 font-medium">Delete?</span>
+      <span className="inline-flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+        <span className="text-sm text-red-800 font-medium">Delete?</span>
         <button
           onClick={() => startTransition(async () => {
             const res = await action();
             if (res.error) { setError(res.error); setConfirm(false); }
           })}
-          className="text-xs bg-red-600 text-white px-2 py-0.5 rounded font-medium hover:bg-red-700 transition-colors"
+          className="text-sm bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-red-700 transition-colors"
         >
           Yes
         </button>
         <button
           onClick={() => setConfirm(false)}
-          className="text-xs text-gray-500 hover:text-gray-800 transition-colors"
+          className="text-sm text-gray-500 hover:text-gray-800 px-2 py-1.5 transition-colors"
         >
           No
         </button>
-        {error && <span className="text-xs text-red-600 ml-1">{error}</span>}
+        {error && <span className="text-sm text-red-600 ml-1">{error}</span>}
       </span>
     );
   }
@@ -159,7 +159,7 @@ function DeleteButton({ action }: { action: () => Promise<{ error: string | null
   return (
     <button
       onClick={() => setConfirm(true)}
-      className="text-xs text-gray-400 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+      className="text-sm text-gray-400 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
     >
       Delete
     </button>
@@ -171,7 +171,7 @@ function DeleteButton({ action }: { action: () => Promise<{ error: string | null
 function ProductTypeBadge({ type }: { type: ProductType }) {
   const cfg = TYPE_CONFIG[type];
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.badge}`}>
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${cfg.badge}`}>
       <span>{cfg.icon}</span>
       {cfg.sublabel}
     </span>
@@ -512,7 +512,7 @@ function RecipeSection({
                     setSelectedIngredientId('');
                     setSelectedProductId('');
                   }}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                  className={`flex-1 py-3 text-sm font-semibold rounded-xl border transition-colors ${
                     componentType === t
                       ? 'bg-amber-600 text-white border-amber-600'
                       : 'bg-white text-gray-600 border-gray-300 hover:border-amber-400'
@@ -531,7 +531,7 @@ function RecipeSection({
                   ? setSelectedIngredientId(e.target.value)
                   : setSelectedProductId(e.target.value)
               }
-              className="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+              className="block w-full border border-gray-300 rounded-xl px-4 py-3.5 text-base bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
             >
               <option value="">
                 {componentType === 'ingredient' ? 'Select an ingredient…' : 'Select a recipe product…'}
@@ -558,18 +558,18 @@ function RecipeSection({
                 type="number" min="0" step="any" value={qty}
                 onChange={e => setQty(e.target.value)}
                 placeholder="Quantity"
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+                className="flex-1 border border-gray-300 rounded-xl px-4 py-3.5 text-base bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
               />
               <select
                 value={unitIsCompatible ? unit : (compatibleUnits[0] ?? unit)}
                 onChange={e => setUnit(e.target.value as Unit)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+                className="border border-gray-300 rounded-xl px-4 py-3.5 text-base bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
               >
                 {compatibleUnits.map(u => <option key={u} value={u}>{UNIT_LABELS[u]}</option>)}
               </select>
               <button
                 type="button" onClick={handleAdd} disabled={addPending}
-                className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 transition-colors"
+                className="px-5 py-3.5 bg-amber-600 text-white text-base font-semibold rounded-xl hover:bg-amber-700 disabled:opacity-50 transition-colors"
               >
                 {addPending ? '…' : 'Add'}
               </button>
@@ -588,7 +588,7 @@ function RecipeSection({
         ) : (
           <button
             type="button" onClick={() => setAdding(true)}
-            className="w-full py-2 text-sm text-amber-700 font-medium border border-dashed border-amber-300 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition-colors"
+            className="w-full py-3.5 text-base text-amber-700 font-semibold border border-dashed border-amber-300 rounded-xl hover:border-amber-400 hover:bg-amber-50 transition-colors"
           >
             + Add ingredient or component
           </button>
@@ -829,7 +829,7 @@ function ProductForm({
       {/* ── Product type selector ── */}
       <div>
         <p className="text-sm font-semibold text-gray-700 mb-3">What type of product is this?</p>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-4">
           {PRODUCT_TYPES.map(({ value }) => {
             const cfg = TYPE_CONFIG[value];
             const active = productType === value;
@@ -838,15 +838,15 @@ function ProductForm({
                 key={value}
                 type="button"
                 onClick={() => setProductType(value)}
-                className={`p-3.5 rounded-xl border-2 text-left transition-all ${
+                className={`p-5 rounded-xl border-2 text-left transition-all ${
                   active ? cfg.cardActive : cfg.cardIdle
                 }`}
               >
-                <div className="text-2xl mb-2">{cfg.icon}</div>
-                <div className={`text-sm font-semibold mb-1 ${active ? 'text-gray-900' : 'text-gray-700'}`}>
+                <div className="text-3xl mb-3">{cfg.icon}</div>
+                <div className={`text-base font-semibold mb-1.5 ${active ? 'text-gray-900' : 'text-gray-700'}`}>
                   {cfg.label}
                 </div>
-                <div className="text-xs text-gray-500 leading-snug">{cfg.description}</div>
+                <div className="text-sm text-gray-500 leading-snug">{cfg.description}</div>
               </button>
             );
           })}
@@ -1039,23 +1039,23 @@ function ProductModal({
         aria-hidden="true"
       />
       {/* Centred panel */}
-      <div className="relative min-h-full flex items-start justify-center p-4 pt-12 pb-16">
-        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[calc(100vh-7rem)] overflow-hidden">
+      <div className="relative min-h-full flex items-start justify-center p-4 pt-10 pb-16">
+        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[calc(100vh-6rem)] overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-7 py-5 border-b border-gray-200 flex-shrink-0">
-            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          <div className="flex items-center justify-between px-8 py-6 border-b border-gray-200 flex-shrink-0">
+            <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
               aria-label="Close"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
           {/* Scrollable content */}
-          <div className="overflow-y-auto px-7 py-6">
+          <div className="overflow-y-auto px-8 py-7">
             {children}
           </div>
         </div>
@@ -1106,24 +1106,24 @@ export function MenuClient({
   return (
     <div className="flex gap-6">
       {/* ── Category sidebar ── */}
-      <div className="w-60 flex-shrink-0">
+      <div className="w-72 flex-shrink-0">
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="px-4 py-3.5 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Categories</h2>
+          <div className="px-5 py-4 border-b border-gray-200 bg-gray-50">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Categories</h2>
           </div>
 
           {addingCategory && (
-            <div className="p-4 border-b border-gray-100 bg-indigo-50/40">
-              <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-3">New category</p>
+            <div className="p-5 border-b border-gray-100 bg-indigo-50/40">
+              <p className="text-sm font-semibold text-indigo-700 uppercase tracking-wider mb-4">New category</p>
               <CategoryForm onDone={() => setAddingCategory(false)} />
             </div>
           )}
 
-          <ul className="py-1.5">
+          <ul className="py-2">
             {categories.map(cat => (
               <li key={cat.id}>
                 {editingCategoryId === cat.id ? (
-                  <div className="px-3 py-3 border-b border-gray-100">
+                  <div className="px-4 py-4 border-b border-gray-100">
                     <CategoryForm category={cat} onDone={() => setEditingCategoryId(null)} />
                   </div>
                 ) : (
@@ -1132,17 +1132,17 @@ export function MenuClient({
                       setSelectedCategoryId(cat.id);
                       closeDrawer();
                     }}
-                    className={`w-full text-left px-3 py-2.5 flex items-center justify-between rounded-lg mx-1 transition-colors ${
+                    className={`w-full text-left px-4 py-3.5 flex items-center justify-between mx-1.5 rounded-xl transition-colors ${
                       cat.id === selectedCategoryId
                         ? 'bg-indigo-50 text-indigo-700'
                         : 'text-gray-700 hover:bg-gray-50'
                     }`}
-                    style={{ width: 'calc(100% - 8px)' }}
+                    style={{ width: 'calc(100% - 12px)' }}
                   >
-                    <span className={`text-sm truncate ${cat.id === selectedCategoryId ? 'font-semibold' : 'font-medium'}`}>
+                    <span className={`text-base truncate ${cat.id === selectedCategoryId ? 'font-semibold' : 'font-medium'}`}>
                       {cat.name}
                     </span>
-                    <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full flex-shrink-0 ${
+                    <span className={`ml-2 text-sm px-2 py-0.5 rounded-full flex-shrink-0 font-medium ${
                       cat.id === selectedCategoryId
                         ? 'bg-indigo-100 text-indigo-600'
                         : 'bg-gray-100 text-gray-500'
@@ -1154,15 +1154,15 @@ export function MenuClient({
               </li>
             ))}
             {categories.length === 0 && (
-              <li className="px-4 py-4 text-sm text-gray-400 text-center">No categories yet</li>
+              <li className="px-5 py-6 text-base text-gray-400 text-center">No categories yet</li>
             )}
           </ul>
 
-          <div className="p-3 border-t border-gray-100 space-y-1">
+          <div className="p-4 border-t border-gray-100 space-y-2">
             {!addingCategory && (
               <button
                 onClick={() => { setAddingCategory(true); setEditingCategoryId(null); }}
-                className="w-full py-2 text-sm text-indigo-600 font-medium border border-dashed border-indigo-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
+                className="w-full py-3 text-base text-indigo-600 font-semibold border border-dashed border-indigo-200 rounded-xl hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
               >
                 + Add category
               </button>
@@ -1171,7 +1171,7 @@ export function MenuClient({
               <div className="flex gap-2 justify-center">
                 <button
                   onClick={() => setEditingCategoryId(selectedCategory.id)}
-                  className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                  className="text-sm text-gray-400 hover:text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   Edit
                 </button>
@@ -1186,13 +1186,13 @@ export function MenuClient({
       <div className="flex-1 min-w-0">
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           {/* Panel header */}
-          <div className="px-5 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+          <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+              <h2 className="text-base font-semibold text-gray-700 uppercase tracking-wider">
                 {selectedCategory ? selectedCategory.name : 'Products'}
               </h2>
               {selectedCategory && (
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-sm text-gray-400 mt-0.5">
                   {visibleProducts.length} product{visibleProducts.length !== 1 ? 's' : ''}
                 </p>
               )}
@@ -1200,9 +1200,9 @@ export function MenuClient({
             {selectedCategory && (
               <button
                 onClick={openAddProduct}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white text-base font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 Add product
@@ -1220,17 +1220,17 @@ export function MenuClient({
                 return (
                   <li
                     key={product.id}
-                    className={`flex items-center justify-between px-5 py-3.5 border-l-4 transition-colors ${cfg.listBorder} ${
+                    className={`flex items-center justify-between px-6 py-5 border-l-4 transition-colors ${cfg.listBorder} ${
                       isEditing ? 'bg-indigo-50/30' : 'hover:bg-gray-50'
                     }`}
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`font-semibold text-sm ${isEditing ? 'text-indigo-700' : 'text-gray-900'}`}>
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className={`font-semibold text-lg ${isEditing ? 'text-indigo-700' : 'text-gray-900'}`}>
                           {product.name}
                         </span>
                         <ProductTypeBadge type={product.product_type} />
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        <span className={`text-sm px-3 py-1 rounded-full font-medium ${
                           product.available
                             ? 'bg-emerald-100 text-emerald-700'
                             : 'bg-red-100 text-red-600'
@@ -1239,20 +1239,20 @@ export function MenuClient({
                         </span>
                       </div>
                       {product.description && (
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">{product.description}</p>
+                        <p className="text-sm text-gray-400 mt-1 truncate">{product.description}</p>
                       )}
                     </div>
 
-                    <div className="ml-4 flex items-center gap-3 flex-shrink-0">
+                    <div className="ml-5 flex items-center gap-4 flex-shrink-0">
                       <div className="text-right">
-                        <div className="font-semibold text-gray-900 text-sm">
+                        <div className="font-semibold text-gray-900 text-lg">
                           {formatExAsInc(product.price_cents, product.gst_rate)}
                         </div>
-                        <div className="text-xs text-gray-400">inc. GST</div>
+                        <div className="text-sm text-gray-400">inc. GST</div>
                       </div>
                       <button
                         onClick={() => isEditing ? closeDrawer() : openEditProduct(product.id)}
-                        className={`text-xs px-2.5 py-1.5 rounded-lg font-medium transition-colors ${
+                        className={`text-sm px-4 py-2.5 rounded-xl font-semibold transition-colors ${
                           isEditing
                             ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
                             : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
@@ -1267,17 +1267,17 @@ export function MenuClient({
               })}
             </ul>
           ) : (
-            <div className="px-5 py-16 text-center">
+            <div className="px-6 py-20 text-center">
               {selectedCategory ? (
                 <>
-                  <div className="text-4xl mb-3">🍽️</div>
-                  <p className="text-sm font-medium text-gray-600">No products in {selectedCategory.name} yet</p>
-                  <p className="text-xs text-gray-400 mt-1 mb-4">Add your first product to this category.</p>
+                  <div className="text-5xl mb-4">🍽️</div>
+                  <p className="text-lg font-medium text-gray-600">No products in {selectedCategory.name} yet</p>
+                  <p className="text-base text-gray-400 mt-1 mb-5">Add your first product to this category.</p>
                   <button
                     onClick={openAddProduct}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                    className="inline-flex items-center gap-2 px-6 py-3.5 bg-indigo-600 text-white text-base font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     Add first product

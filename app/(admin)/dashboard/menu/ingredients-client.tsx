@@ -26,11 +26,11 @@ function ErrorMsg({ message }: { message: string }) {
 }
 
 const inputCls =
-  'block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 ' +
+  'block w-full border border-gray-300 rounded-xl px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 ' +
   'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors';
 
 const selectCls =
-  'block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white ' +
+  'block w-full border border-gray-300 rounded-xl px-4 py-3.5 text-base text-gray-900 bg-white ' +
   'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors';
 
 // ─── Delete button ────────────────────────────────────────────
@@ -159,13 +159,13 @@ function IngredientForm({ ingredient, onDone }: { ingredient?: Ingredient; onDon
       <div className="flex gap-2">
         <button
           type="submit" disabled={pending}
-          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          className="px-6 py-3.5 bg-indigo-600 text-white text-base font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
         >
           {pending ? 'Saving…' : ingredient ? 'Save changes' : 'Add ingredient'}
         </button>
         <button
           type="button" onClick={onDone}
-          className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+          className="px-6 py-3.5 border border-gray-300 text-gray-700 text-base font-semibold rounded-xl hover:bg-gray-50 transition-colors"
         >
           Cancel
         </button>
@@ -192,31 +192,31 @@ function IngredientRow({ ingredient, onEdit, isEditing, onDoneEditing }: {
   }
 
   return (
-    <li className={`flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors border-l-4 ${
+    <li className={`flex items-center justify-between px-6 py-5 hover:bg-gray-50 transition-colors border-l-4 ${
       ingredient.out_of_stock ? 'border-l-red-300' : 'border-l-transparent'
     }`}>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className={`font-medium text-sm ${ingredient.out_of_stock ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+        <div className="flex items-center gap-3">
+          <span className={`font-medium text-lg ${ingredient.out_of_stock ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
             {ingredient.name}
           </span>
-          <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+          <span className="text-sm text-gray-400 bg-gray-100 px-2.5 py-1 rounded-lg">
             per {UNIT_LABELS[ingredient.unit as Unit]}
           </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 flex-shrink-0 ml-4">
-        <span className="text-sm font-mono text-gray-700">
+      <div className="flex items-center gap-5 flex-shrink-0 ml-5">
+        <span className="text-base font-mono text-gray-700">
           {formatEx(ingredient.cost_cents)}
-          <span className="text-xs text-gray-400 font-sans ml-1">ex. GST</span>
+          <span className="text-sm text-gray-400 font-sans ml-1">ex. GST</span>
         </span>
 
         <StockToggle ingredient={ingredient} />
 
         <button
           onClick={onEdit}
-          className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+          className="text-sm text-gray-400 hover:text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
         >
           Edit
         </button>
@@ -247,7 +247,7 @@ export function IngredientsClient({ ingredients }: { ingredients: Ingredient[] }
           {!adding && (
             <button
               onClick={() => { setAdding(true); setEditingId(null); }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white text-base font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

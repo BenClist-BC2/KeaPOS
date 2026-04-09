@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { logAudit } from '@/lib/audit';
 import type { CartLine } from '@/lib/store/cart';
 import type { OrderType } from '@/lib/types';
+import { calculateProductCost } from '@/lib/product-cost';
 
 export interface PlaceOrderInput {
   lines: CartLine[];
@@ -91,16 +92,41 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     return { order_id: null, order_number: null, change_cents: 0, error: orderError?.message ?? 'Failed to create order' };
   }
 
-  // Insert order items
+  // Fetch product metadata (gst_rate) and calculate costs for all line items
+  const productIds = input.lines
+    .map(l => l.product_id)
+    .filter((id): id is string => !!id);
+
+  const { data: productRows } = productIds.length > 0
+    ? await supabase
+        .from('products')
+        .select('id, gst_rate')
+        .in('id', productIds)
+    : { data: [] };
+
+  const productMap = new Map(
+    (productRows ?? []).map((p: { id: string; gst_rate: number }) => [p.id, p])
+  );
+
+  // Calculate costs in parallel
+  const costMap = new Map(
+    await Promise.all(
+      productIds.map(async id => [id, await calculateProductCost(supabase, id)] as const)
+    )
+  );
+
+  // Insert order items with snapshotted gst_rate and unit_cost_cents
   const { error: itemsError } = await supabase.from('order_items').insert(
     input.lines.map(line => ({
-      order_id:        order.id,
-      product_id:      line.product_id,
-      name:            line.name,
-      quantity:        line.quantity,
+      order_id:         order.id,
+      product_id:       line.product_id,
+      name:             line.name,
+      quantity:         line.quantity,
       unit_price_cents: line.price_cents,
-      notes:           line.notes || null,
-      status:          'pending',
+      unit_cost_cents:  line.product_id ? (costMap.get(line.product_id) ?? null) : null,
+      gst_rate:         line.product_id ? (productMap.get(line.product_id)?.gst_rate ?? 15) : 15,
+      notes:            line.notes || null,
+      status:           'pending',
     }))
   );
 

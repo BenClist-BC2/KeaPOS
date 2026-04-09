@@ -5,6 +5,7 @@ import { signOut } from '@/lib/auth/actions';
 const navigation = [
   { name: 'Dashboard',  href: '/dashboard' },
   { name: 'Menu',       href: '/dashboard/menu' },
+  { name: 'Stock',      href: '/dashboard/stock' },
   { name: 'Locations',  href: '/dashboard/locations' },
   { name: 'Terminals',  href: '/dashboard/terminals' },
   { name: 'Staff',      href: '/dashboard/staff' },

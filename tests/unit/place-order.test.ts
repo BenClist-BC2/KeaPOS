@@ -14,6 +14,9 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 vi.mock('@/lib/audit', () => ({ logAudit: mockLogAudit }));
+vi.mock('@/lib/product-cost', () => ({
+  calculateProductCost: vi.fn().mockResolvedValue(150),
+}));
 
 import { placeOrder } from '@/app/(pos)/terminal/actions';
 import type { PlaceOrderInput } from '@/app/(pos)/terminal/actions';
@@ -72,6 +75,12 @@ function setupOrderFlow(
       select: vi.fn().mockReturnValue({
         single: vi.fn().mockResolvedValue(orderResult),
       }),
+    }),
+  });
+  // Fetch product gst_rate data
+  mockFrom.mockReturnValueOnce({
+    select: vi.fn().mockReturnValue({
+      in: vi.fn().mockResolvedValue({ data: [{ id: 'prod-1', gst_rate: 15 }], error: null }),
     }),
   });
   // Insert order items
@@ -187,6 +196,7 @@ describe('placeOrder', () => {
 
   it('returns error when order items insertion fails', async () => {
     setupTerminalAuth();
+    // Create order
     mockFrom.mockReturnValueOnce({
       insert: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -194,6 +204,13 @@ describe('placeOrder', () => {
         }),
       }),
     });
+    // Product gst_rate fetch
+    mockFrom.mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        in: vi.fn().mockResolvedValue({ data: [{ id: 'prod-1', gst_rate: 15 }], error: null }),
+      }),
+    });
+    // Items insert (error)
     mockFrom.mockReturnValueOnce({
       insert: vi.fn().mockResolvedValue({ error: { message: 'items insert failed' } }),
     });
@@ -204,11 +221,18 @@ describe('placeOrder', () => {
 
   it('returns error when payment recording fails', async () => {
     setupTerminalAuth();
+    // Create order
     mockFrom.mockReturnValueOnce({
       insert: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
           single: vi.fn().mockResolvedValue({ data: { id: 'order-1', order_number: 42 }, error: null }),
         }),
+      }),
+    });
+    // Product gst_rate fetch
+    mockFrom.mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        in: vi.fn().mockResolvedValue({ data: [{ id: 'prod-1', gst_rate: 15 }], error: null }),
       }),
     });
     mockFrom.mockReturnValueOnce({ insert: vi.fn().mockResolvedValue({ error: null }) });
@@ -266,6 +290,11 @@ describe('placeOrder', () => {
       }),
     });
     mockFrom.mockReturnValueOnce({ insert: mockInsertOrder });
+    mockFrom.mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        in: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    });
     mockFrom.mockReturnValueOnce({ insert: vi.fn().mockResolvedValue({ error: null }) });
     mockFrom.mockReturnValueOnce({ insert: vi.fn().mockResolvedValue({ error: null }) });
     mockFrom.mockReturnValueOnce({ update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({}) }) });

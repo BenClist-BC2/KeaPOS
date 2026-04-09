@@ -28,7 +28,7 @@ export function TerminalShell() {
       }
 
       // Check if user is a terminal (terminals have email pattern: terminal-*@keapos.internal)
-      const isTerminal = session.user.email?.startsWith('terminal-') && session.user.email?.endsWith('@keapos.internal');
+      const isTerminal = !!(session.user.email?.startsWith('terminal-') && session.user.email?.endsWith('@keapos.internal'));
       setTerminalAuthenticated(isTerminal);
     });
 

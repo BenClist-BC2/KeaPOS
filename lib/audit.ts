@@ -50,14 +50,52 @@ export type AuditAction =
   | 'location.modified'
   | 'location.deactivated'
 
-  // Menu management
+  // Menu management — categories & products
   | 'category.created'
   | 'category.modified'
   | 'category.deactivated'
   | 'product.created'
   | 'product.modified'
   | 'product.price_changed'
-  | 'product.deactivated';
+  | 'product.deactivated'
+  | 'product.deleted'
+  | 'product.availability_changed'
+
+  // Menu management — ingredients
+  | 'ingredient.created'
+  | 'ingredient.modified'
+  | 'ingredient.deleted'
+  | 'ingredient.stock_toggled'
+
+  // Menu management — suppliers
+  | 'supplier.created'
+  | 'supplier.modified'
+  | 'supplier.deactivated'
+  | 'supplier.deleted'
+
+  // Menu management — stock receiving
+  | 'stock_receipt.created'
+  | 'stock_receipt.deleted'
+
+  // Menu management — modifiers
+  | 'modifier_group.created'
+  | 'modifier_group.modified'
+  | 'modifier_group.deleted'
+  | 'modifier.created'
+  | 'modifier.modified'
+  | 'modifier.deleted'
+
+  // Menu management — combos
+  | 'combo.created'
+  | 'combo.modified'
+  | 'combo.deleted'
+
+  // Menu management — promotions
+  | 'promotion.created'
+  | 'promotion.modified'
+  | 'promotion.activated'
+  | 'promotion.deactivated'
+  | 'promotion.deleted';
 
 export type AuditEntityType =
   | 'order'
@@ -68,6 +106,13 @@ export type AuditEntityType =
   | 'location'
   | 'category'
   | 'product'
+  | 'ingredient'
+  | 'supplier'
+  | 'stock_receipt'
+  | 'modifier_group'
+  | 'modifier'
+  | 'combo'
+  | 'promotion'
   | 'auth';
 
 export interface AuditLogEntry {
